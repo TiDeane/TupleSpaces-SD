@@ -2,8 +2,8 @@ package pt.ulisboa.tecnico.tuplespaces.client;
 
 import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc;
 import pt.ulisboa.tecnico.tuplespaces.client.grpc.ClientService;
-import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.PutRequest;
-import pt.ulisboa.tecnico.tuplespaces.*;
+//import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.PutRequest;
+//import pt.ulisboa.tecnico.tuplespaces.*;
 
 import io.grpc.ManagedChannel;
 

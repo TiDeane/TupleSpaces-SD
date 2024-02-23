@@ -4,7 +4,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized;
 import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc;
-import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.PutRequest;
+//import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.PutRequest;
 
 public class ClientService {
 

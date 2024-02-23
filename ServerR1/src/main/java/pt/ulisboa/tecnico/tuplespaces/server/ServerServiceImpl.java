@@ -1,9 +1,12 @@
 package pt.ulisboa.tecnico.tuplespaces.server;
 
 import io.grpc.stub.StreamObserver;
-import pt.ulisboa.tecnico.tuplespaces.*;
+import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized;
+import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized.*;
+import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc.TupleSpacesImplBase;
+import pt.ulisboa.tecnico.tuplespaces.server.domain.ServerState;
 
-public class ServerServiceImpl extends TupleSpaces.TupleSpacesImplBase {
+public class ServerServiceImpl extends TupleSpacesImplBase {
 
 	private ServerState serverState = new ServerState();
 

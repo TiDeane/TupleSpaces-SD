@@ -1,9 +1,5 @@
 package pt.ulisboa.tecnico.tuplespaces.server.domain;
 
-import io.grpc.stub.StreamObserver;
-import pt.ulisboa.tecnico.tuplespaces.*;
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc.TupleSpacesImplBase;
-
 import java.util.ArrayList;
 import java.util.List;
 
