@@ -1,5 +1,9 @@
 package pt.ulisboa.tecnico.tuplespaces.server.domain;
 
+import io.grpc.stub.StreamObserver;
+import pt.ulisboa.tecnico.tuplespaces.*;
+import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc.TupleSpacesImplBase;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +34,10 @@ public class ServerState {
   }
 
   public String take(String pattern) {
-    // TODO
-    return null;
+    String tuple = getMatchingTuple(pattern);
+    if (tuple != null)
+      this.tuples.remove(tuple);
+    return tuple;
   }
 
   public List<String> getTupleSpacesState() {

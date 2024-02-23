@@ -1,5 +1,7 @@
 package pt.ulisboa.tecnico.tuplespaces.client;
 
+import io.grpc.ManagedChannelBuilder;
+import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc;
 import pt.ulisboa.tecnico.tuplespaces.client.grpc.ClientService;
 
 public class ClientMain {
@@ -14,7 +16,7 @@ public class ClientMain {
         }
 
         // check arguments
-        if (args.length != 3) {
+        if (args.length != 2) { // Codigo base diz != 3
             System.err.println("Argument(s) missing!");
             System.err.println("Usage: mvn exec:java -Dexec.args=<host> <port>");
             return;
@@ -23,9 +25,11 @@ public class ClientMain {
         // get the host and the port
         final String host = args[0];
         final String port = args[1];
+        final String target = host + ":" + port;
 
         CommandProcessor parser = new CommandProcessor(new ClientService());
-        parser.parseInput();
+        parser.parseInput(target);
 
+        //channel.shutdownNow();
     }
 }

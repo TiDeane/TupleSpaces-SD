@@ -1,6 +1,11 @@
 package pt.ulisboa.tecnico.tuplespaces.client;
 
+import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc;
 import pt.ulisboa.tecnico.tuplespaces.client.grpc.ClientService;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.PutRequest;
+import pt.ulisboa.tecnico.tuplespaces.*;
+
+import io.grpc.ManagedChannel;
 
 import java.util.Scanner;
 
@@ -23,52 +28,56 @@ public class CommandProcessor {
         this.clientService = clientService;
     }
 
-    void parseInput() {
+    void parseInput(String target) {
 
-        Scanner scanner = new Scanner(System.in);
-        boolean exit = false;
+        ManagedChannel channel = clientService.buildChannel(target);
+        TupleSpacesGrpc.TupleSpacesBlockingStub stub = clientService.buildStub(channel);
 
-        while (!exit) {
-            System.out.print("> ");
-            String line = scanner.nextLine().trim();
-            String[] split = line.split(SPACE);
-             switch (split[0]) {
-                case PUT:
-                    this.put(split);
-                    break;
+        try (Scanner scanner = new Scanner(System.in)) {
+            boolean exit = false;
 
-                case READ:
-                    this.read(split);
-                    break;
+            while (!exit) {
+                System.out.print("> ");
+                String line = scanner.nextLine().trim();
+                String[] split = line.split(SPACE);
+                switch (split[0]) {
+                    case PUT:
+                        this.put(split, stub);
+                        break;
 
-                case TAKE:
-                    this.take(split);
-                    break;
+                    case READ:
+                        this.read(split, stub);
+                        break;
 
-                case GET_TUPLE_SPACES_STATE:
-                    this.getTupleSpacesState(split);
-                    break;
+                    case TAKE:
+                        this.take(split, stub);
+                        break;
 
-                case SLEEP:
-                    this.sleep(split);
-                    break;
+                    case GET_TUPLE_SPACES_STATE:
+                        this.getTupleSpacesState(split, stub);
+                        break;
 
-                case SET_DELAY:
-                    this.setdelay(split);
-                    break;
+                    case SLEEP:
+                        this.sleep(split, stub);
+                        break;
 
-                case EXIT:
-                    exit = true;
-                    break;
+                    case SET_DELAY:
+                        this.setdelay(split, stub);
+                        break;
 
-                default:
-                    this.printUsage();
-                    break;
-             }
+                    case EXIT:
+                        exit = true;
+                        break;
+
+                    default:
+                        this.printUsage();
+                        break;
+                }
+            }
         }
     }
 
-    private void put(String[] split){
+    private void put(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
 
         // check if input is valid
         if (!this.inputIsValid(split)) {
@@ -78,13 +87,14 @@ public class CommandProcessor {
         
         // get the tuple
         String tuple = split[1];
+        clientService.put(tuple, stub);
+        System.out.println("OK");
 
         // put the tuple
-        System.out.println("TODO: implement put command");
-
+        // operate through clientService
     }
 
-    private void read(String[] split){
+    private void read(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
         // check if input is valid
         if (!this.inputIsValid(split)) {
             this.printUsage();
@@ -99,7 +109,7 @@ public class CommandProcessor {
     }
 
 
-    private void take(String[] split){
+    private void take(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
          // check if input is valid
         if (!this.inputIsValid(split)) {
             this.printUsage();
@@ -113,7 +123,7 @@ public class CommandProcessor {
         System.out.println("TODO: implement take command");
     }
 
-    private void getTupleSpacesState(String[] split){
+    private void getTupleSpacesState(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
 
         if (split.length != 2){
             this.printUsage();
@@ -126,7 +136,7 @@ public class CommandProcessor {
 
     }
 
-    private void sleep(String[] split) {
+    private void sleep(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
       if (split.length != 2){
         this.printUsage();
         return;
@@ -148,7 +158,7 @@ public class CommandProcessor {
       }
     }
 
-    private void setdelay(String[] split) {
+    private void setdelay(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
       if (split.length != 3){
         this.printUsage();
         return;
