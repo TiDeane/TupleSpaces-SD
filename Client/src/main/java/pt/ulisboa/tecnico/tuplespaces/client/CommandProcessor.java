@@ -88,10 +88,6 @@ public class CommandProcessor {
         // get the tuple
         String tuple = split[1];
         clientService.put(tuple, stub);
-        System.out.println("OK");
-
-        // put the tuple
-        // operate through clientService
     }
 
     private void read(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
@@ -100,12 +96,9 @@ public class CommandProcessor {
             this.printUsage();
             return;
         }
-        
-        // get the tuple
-        String tuple = split[1];
 
-        // read the tuple
-        System.out.println("TODO: implement read command");
+        String pattern = split[1];
+        clientService.read(pattern, stub);
     }
 
 
@@ -116,11 +109,8 @@ public class CommandProcessor {
             return;
         }
         
-        // get the tuple
-        String tuple = split[1];
-
-        // take the tuple
-        System.out.println("TODO: implement take command");
+        String pattern = split[1];
+        clientService.take(pattern, stub);
     }
 
     private void getTupleSpacesState(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
