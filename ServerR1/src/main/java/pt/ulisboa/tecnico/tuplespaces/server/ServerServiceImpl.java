@@ -26,6 +26,9 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 		String pattern = request.getSearchPattern();
 		String tuple = serverState.take(pattern);
 
+		if (tuple == null)
+			tuple = "NONE";
+
 		TupleSpacesCentralized.TakeResponse response = TakeResponse.newBuilder().setResult(tuple).build();
 
 		responseObserver.onNext(response);
@@ -36,6 +39,9 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	public void read(ReadRequest request, StreamObserver<ReadResponse> responseObserver) {
 		String pattern = request.getSearchPattern();
 		String tuple = serverState.read(pattern);
+
+		if (tuple == null)
+			tuple = "NONE";
 
 		TupleSpacesCentralized.ReadResponse response = ReadResponse.newBuilder().setResult(tuple).build();
 
