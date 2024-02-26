@@ -28,7 +28,6 @@ public class ClientMain {
 
         CommandProcessor parser = new CommandProcessor(new ClientService());
         parser.parseInput(target);
-
-        //channel.shutdownNow();
+        
     }
 }

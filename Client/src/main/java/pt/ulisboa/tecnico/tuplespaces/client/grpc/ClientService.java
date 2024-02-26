@@ -27,8 +27,8 @@ public class ClientService {
 
     try {
       putRequest = TupleSpacesCentralized.PutRequest.newBuilder().setNewTuple(tuple).build();
-
       stub.put(putRequest);
+
       System.out.println("OK");
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
@@ -72,7 +72,9 @@ public class ClientService {
     }
   }
 
-  public void getTupleSpacesState(String qualifier, TupleSpacesGrpc.TupleSpacesBlockingStub stub) { /* NOTE: não é usado o qualifier logo vai sempre buscar o mesmo server */
+  public void getTupleSpacesState(String qualifier, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
+    /* NOTE: não é usado o qualifier logo vai sempre buscar o mesmo server */
+    
     TupleSpacesCentralized.getTupleSpacesStateRequest getTupleSpacesStateRequest;
     TupleSpacesCentralized.getTupleSpacesStateResponse getTupleSpacesStateResponse;
     List<String> TupleSpace;

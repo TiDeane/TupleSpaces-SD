@@ -29,12 +29,13 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	@Override
 	public void take(TakeRequest request, StreamObserver<TakeResponse> responseObserver) {
 		String pattern = request.getSearchPattern();
-		String tuple;
+		String tuple = serverState.take(pattern);
 
 		synchronized (serverState) {
-			while ((tuple = serverState.take(pattern)) == null) {
+			while (tuple == null) {
 				try {
 					serverState.wait();
+					tuple = serverState.take(pattern);
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					System.err.println("Interrupted while waiting: " + e.getMessage());		  
@@ -52,12 +53,13 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	@Override
 	public void read(ReadRequest request, StreamObserver<ReadResponse> responseObserver) {
 		String pattern = request.getSearchPattern();
-		String tuple;
+		String tuple = serverState.read(pattern);
 
 		synchronized (serverState) {
-			while ((tuple = serverState.read(pattern)) == null) {
+			while (tuple == null) {
 				try {
 					serverState.wait();
+					tuple = serverState.read(pattern);
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					System.err.println("Interrupted while waiting: " + e.getMessage());		  

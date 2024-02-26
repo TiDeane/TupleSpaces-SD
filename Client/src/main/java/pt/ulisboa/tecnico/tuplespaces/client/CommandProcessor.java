@@ -75,6 +75,7 @@ public class CommandProcessor {
                 }
             }
         }
+        channel.shutdownNow();
     }
 
     private void put(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
