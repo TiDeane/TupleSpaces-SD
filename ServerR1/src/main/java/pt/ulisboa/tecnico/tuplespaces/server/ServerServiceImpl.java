@@ -1,5 +1,7 @@
 package pt.ulisboa.tecnico.tuplespaces.server;
 
+import java.util.List;
+
 import io.grpc.stub.StreamObserver;
 import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized;
 import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized.*;
@@ -7,13 +9,16 @@ import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc.Tuple
 import pt.ulisboa.tecnico.tuplespaces.server.domain.ServerState;
 
 public class ServerServiceImpl extends TupleSpacesImplBase {
-
 	private ServerState serverState = new ServerState();
 
 	@Override
 	public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
 		String tuple = request.getNewTuple();
-		serverState.put(tuple);
+
+		synchronized (serverState) {
+			serverState.put(tuple);
+			serverState.notifyAll();
+		}
 
 		TupleSpacesCentralized.PutResponse response = PutResponse.newBuilder().build();
 
@@ -24,12 +29,21 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	@Override
 	public void take(TakeRequest request, StreamObserver<TakeResponse> responseObserver) {
 		String pattern = request.getSearchPattern();
-		String tuple = serverState.take(pattern);
+		String tuple;
 
-		if (tuple == null)
-			tuple = "NONE";
+		synchronized (serverState) {
+			while ((tuple = serverState.take(pattern)) == null) {
+				try {
+					serverState.wait();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					System.err.println("Interrupted while waiting: " + e.getMessage());		  
+				}
+			}
+		}
 
-		TupleSpacesCentralized.TakeResponse response = TakeResponse.newBuilder().setResult(tuple).build();
+		TupleSpacesCentralized.TakeResponse response = TakeResponse.newBuilder()
+			.setResult(tuple).build();
 
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
@@ -38,15 +52,34 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	@Override
 	public void read(ReadRequest request, StreamObserver<ReadResponse> responseObserver) {
 		String pattern = request.getSearchPattern();
-		String tuple = serverState.read(pattern);
+		String tuple;
 
-		if (tuple == null)
-			tuple = "NONE";
+		synchronized (serverState) {
+			while ((tuple = serverState.read(pattern)) == null) {
+				try {
+					serverState.wait();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					System.err.println("Interrupted while waiting: " + e.getMessage());		  
+				}
+			}
+		}
 
-		TupleSpacesCentralized.ReadResponse response = ReadResponse.newBuilder().setResult(tuple).build();
+		TupleSpacesCentralized.ReadResponse response = ReadResponse.newBuilder()
+			.setResult(tuple).build();
 
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
-	
+
+	@Override
+	public void getTupleSpacesState(getTupleSpacesStateRequest request, StreamObserver<getTupleSpacesStateResponse> responseObserver) {
+		List<String> tuples = serverState.getTupleSpacesState();
+
+		TupleSpacesCentralized.getTupleSpacesStateResponse response = TupleSpacesCentralized.getTupleSpacesStateResponse.newBuilder()
+			.addAllTuple(tuples).build();
+
+		responseObserver.onNext(response);
+		responseObserver.onCompleted();		
+	}
 }

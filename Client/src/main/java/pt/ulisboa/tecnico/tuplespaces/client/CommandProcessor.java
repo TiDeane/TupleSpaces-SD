@@ -122,8 +122,7 @@ public class CommandProcessor {
         String qualifier = split[1];
 
         // get the tuple spaces state
-        System.out.println("TODO: implement getTupleSpacesState command");
-
+        clientService.getTupleSpacesState(qualifier, stub);
     }
 
     private void sleep(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {

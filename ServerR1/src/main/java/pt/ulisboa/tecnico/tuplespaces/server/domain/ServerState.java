@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ServerState {
-
   private List<String> tuples;
 
   public ServerState() {
@@ -37,7 +36,7 @@ public class ServerState {
   }
 
   public List<String> getTupleSpacesState() {
-    // TODO
-    return null;
+    // ̶T̶O̶D̶O̶
+    return this.tuples;
   }
 }
