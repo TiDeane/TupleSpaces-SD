@@ -1,0 +1,17 @@
+syntax = "proto3";
+package pt.ulisboa.tecnico.nameserver.contract;
+
+
+message RegisterRequest {
+    string name = 1;
+    string qualifier = 2;
+    string address = 3; // follows the format host:port
+}
+
+message RegisterResponse {
+    // Returns null or throws detailed exception
+}
+
+service NameServer {
+    rpc register(RegisterRequest) returns (RegisterResponse);
+}
