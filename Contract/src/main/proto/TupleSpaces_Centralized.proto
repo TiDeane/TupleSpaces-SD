@@ -22,14 +22,25 @@ message TakeResponse {
   string result = 1;
 }
 
-message getTupleSpacesStateRequest {}
-message getTupleSpacesStateResponse {
+message GetTupleSpacesStateRequest {}
+
+message GetTupleSpacesStateResponse {
   repeated string tuple = 1;
+}
+
+message LookupRequest {
+  string name = 1;
+  string qualifier = 2;
+}
+
+message LookupResponse {
+  repeated string servers = 1;
 }
 
 service TupleSpaces {
   rpc put(PutRequest) returns (PutResponse);
   rpc read(ReadRequest) returns (ReadResponse);
   rpc take(TakeRequest) returns (TakeResponse);
-  rpc getTupleSpacesState(getTupleSpacesStateRequest) returns (getTupleSpacesStateResponse);
+  rpc getTupleSpacesState(GetTupleSpacesStateRequest) returns (GetTupleSpacesStateResponse);
+  rpc lookup(LookupRequest) returns (LookupResponse);
 }

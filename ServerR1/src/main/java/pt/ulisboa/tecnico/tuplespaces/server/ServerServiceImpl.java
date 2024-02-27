@@ -75,10 +75,10 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	}
 
 	@Override
-	public void getTupleSpacesState(getTupleSpacesStateRequest request, StreamObserver<getTupleSpacesStateResponse> responseObserver) {
+	public void getTupleSpacesState(GetTupleSpacesStateRequest request, StreamObserver<GetTupleSpacesStateResponse> responseObserver) {
 		List<String> tuples = serverState.getTupleSpacesState();
 
-		TupleSpacesCentralized.getTupleSpacesStateResponse response = TupleSpacesCentralized.getTupleSpacesStateResponse.newBuilder()
+		TupleSpacesCentralized.GetTupleSpacesStateResponse response = TupleSpacesCentralized.GetTupleSpacesStateResponse.newBuilder()
 			.addAllTuple(tuples).build();
 
 		responseObserver.onNext(response);

@@ -3,8 +3,16 @@ package pt.ulisboa.tecnico.tuplespaces.server;
 import java.io.IOException;
 
 import io.grpc.BindableService;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.StatusRuntimeException;
+import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized;
+import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc;
+import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc;
+import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
+
 
 public class ServerMain {
 
@@ -23,11 +31,38 @@ public class ServerMain {
 			return;
 		}
 
+		final String host = "localhost"; // Define under pom.xml?
 		final int port = Integer.parseInt(args[0]);
+		final String qualifier = args[1];
+		final int nameServerPort = 5001; // Define under pom.xml?
 		final BindableService impl = new ServerServiceImpl();
 
 		// Create a new server to listen on port
 		Server server = ServerBuilder.forPort(port).addService(impl).build();
+
+		final String localAddress = host + ":" + port;
+		final String target = host + ":" + nameServerPort;
+
+		// Building channel to NameServer
+		final ManagedChannel channel = ManagedChannelBuilder.forTarget(target).usePlaintext().build();
+		NameServerGrpc.NameServerBlockingStub stub = NameServerGrpc.newBlockingStub(channel);
+
+		// Registers the TupleSpaces server into the NameServer
+		try {
+			NameServerOuterClass.RegisterRequest registerRequest;
+
+			registerRequest = NameServerOuterClass.RegisterRequest.newBuilder().
+				setName("TupleSpaces").setQualifier(qualifier).
+				setAddress(localAddress).build();
+
+      		stub.register(registerRequest);
+
+		} catch (StatusRuntimeException e) {
+			System.out.println("Caught exception with description: " + e.getStatus().getDescription());
+
+			server.shutdown();
+			return;
+		}
 
 		// Start the server
 		server.start();
