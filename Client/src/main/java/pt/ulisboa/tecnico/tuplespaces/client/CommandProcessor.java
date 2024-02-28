@@ -28,11 +28,17 @@ public class CommandProcessor {
         this.clientService = clientService;
     }
 
-    void parseInput(String target) {
+    void parseInput(String nameServerTarget, String service, String qualifier) {
+
+        String target = clientService.getServer(nameServerTarget, service, qualifier);
+        if (target.isEmpty()) {
+            System.out.println("There are no available servers with the given service name");
+            return;
+        }
 
         ManagedChannel channel = clientService.buildChannel(target);
         TupleSpacesGrpc.TupleSpacesBlockingStub stub = clientService.buildStub(channel);
-
+    
         try (Scanner scanner = new Scanner(System.in)) {
             boolean exit = false;
 

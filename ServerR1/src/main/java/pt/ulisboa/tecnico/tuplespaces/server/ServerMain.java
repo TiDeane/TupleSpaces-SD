@@ -52,7 +52,7 @@ public class ServerMain {
 			NameServerOuterClass.RegisterRequest registerRequest;
 
 			registerRequest = NameServerOuterClass.RegisterRequest.newBuilder().
-				setName("TupleSpaces").setQualifier(qualifier).
+				setName("TupleSpace").setQualifier(qualifier).
 				setAddress(localAddress).build();
 
       		stub.register(registerRequest);

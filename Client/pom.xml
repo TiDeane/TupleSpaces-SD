@@ -23,7 +23,8 @@
 		<mainclass>pt.ulisboa.tecnico.tuplespaces.client.ClientMain</mainclass>
 		<server.host>localhost</server.host>
 		<server.port>5001</server.port>
-		<server.service>TupleSpaces</server.service>
+		<server.service>TupleSpace</server.service>
+		<server.qualifier>A</server.qualifier>
 
 	</properties>
 
@@ -73,6 +74,7 @@
 						<argument>${server.host}</argument>
 						<argument>${server.port}</argument>
 						<argument>${server.service}</argument>
+						<argument>${server.qualifier}</argument>
 					</arguments>
 				</configuration>
 			</plugin>

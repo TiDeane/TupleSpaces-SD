@@ -8,26 +8,15 @@ public class ClientMain {
 
         System.out.println(ClientMain.class.getSimpleName());
 
-        // receive and print arguments
-        System.out.printf("Received %d arguments%n", args.length);
-        for (int i = 0; i < args.length; i++) {
-            System.out.printf("arg[%d] = %s%n", i, args[i]);
-        }
-
-        // check arguments
-        if (args.length != 2) { // Codigo base diz != 3
-            System.err.println("Argument(s) missing!");
-            System.err.println("Usage: mvn exec:java -D exec.args=<host> <port>");
-            return;
-        }
-
-        // get the host and the port
         final String host = args[0];
-        final String port = args[1];
-        final String target = host + ":" + port;
+        final int port = Integer.parseInt(args[1]);
+        final String nameServerTarget = host + ":" + port;
+
+        final String service = args[2];
+        final String qualifier = args[3];
 
         CommandProcessor parser = new CommandProcessor(new ClientService());
-        parser.parseInput(target);
+        parser.parseInput(nameServerTarget, service, qualifier);
         
     }
 }

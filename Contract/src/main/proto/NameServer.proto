@@ -12,6 +12,16 @@ message RegisterResponse {
     // Returns null or throws detailed exception
 }
 
+message LookupRequest {
+    string name = 1;
+    string qualifier = 2;
+  }
+  
+  message LookupResponse {
+    repeated string servers = 1;
+  }
+
 service NameServer {
     rpc register(RegisterRequest) returns (RegisterResponse);
+    rpc lookup(LookupRequest) returns (LookupResponse);
 }

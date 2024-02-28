@@ -16,16 +16,3 @@ class NameServer:
             self.serviceMap[serviceEntry.serviceName] = serviceEntry
         else:
             raise RuntimeError("Not a ServiceEntry, or Service with the same name already exists.")
-
-
-    #def registerServer(self, serviceName, server):
-    #    if serviceName in self.serviceMap:
-    #        self.serviceMap[serviceName].add_server(server)
-    #    else:
-    #        raise KeyError(f"Service '{serviceName}' not registered.")
-
-    #def unregisterServer(self, serviceName, server):
-    #    if serviceName in self.serviceMap:
-    #        self.serviceMap[serviceName].remove_server(server)
-    #    else:
-    #        raise KeyError(f"Service '{serviceName}' not registered.")
