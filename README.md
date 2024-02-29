@@ -52,11 +52,20 @@ mvn clean install
 
 Start a virtual environment, running the following commands:
 
+**Windows:**
 ```s
-python3 -m venv .venv
+python -m venv .venv
 .venv\Scripts\activate
 python -m pip install grpcio
 python -m pip install grpcio-tools
+```
+
+**Linux:**
+```s
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install grpcio
+python3 -m pip install grpcio-tools
 ```
 
 Then, inside the ``Contract\`` folder, run ``mvn exec:exec``. After this, the program will be ready for running.

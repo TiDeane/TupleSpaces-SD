@@ -84,7 +84,6 @@ public class ServerMain {
 			}
             System.out.println("Shutting down server...");
             server.shutdown();
-            System.out.println("Server shut down.");
         }));
 
 		// Do not exit the main thread. Wait until server is terminated.

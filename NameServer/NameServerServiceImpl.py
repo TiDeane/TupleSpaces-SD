@@ -14,7 +14,7 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
     def register(self, request, context):
 
         print("--------------------")
-        print("New register received:\n" + str(request))
+        print("New register request:\n" + str(request))
 
         name = request.name
         qualifier = request.qualifier
@@ -25,7 +25,7 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
             serverEntry = ServerEntry(host=host, port=port, qualifier=qualifier)
 
             if (self.nameServer.checkServiceInMap(name)):
-                print("Service is already in the NameServer, adding ServiceEntry")
+                print("Service is already in the NameServer, adding serverEntry")
                 serviceEntry = self.nameServer.getServiceEntry(name)
             else:
                 print("Registered new Server:\n" + str(serverEntry))
@@ -69,6 +69,8 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
                     if serverEntry.qualifier == qualifier:
                         address = serverEntry.host + ":" + serverEntry.port
                         serverList.append(address)
+            
+            print("Returning list of servers")
 
             return pb2.LookupResponse(servers=serverList)
         except Exception as e:
@@ -99,7 +101,7 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
             serverEntry = serviceEntry.getServerEntry(host, port)
             serviceEntry.removeServerEntry(serverEntry)
 
-            print("Returning list")
+            print("Successfully removed server from NameServer")
 
             return pb2.DeleteResponse()
         except Exception as e:
