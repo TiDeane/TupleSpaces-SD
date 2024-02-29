@@ -25,7 +25,6 @@ public class ClientService {
   }
 
   public String getServer(String nameServerTarget, String service, String qualifier) {
-    System.out.println("building channel with target: " + nameServerTarget);
     
     final ManagedChannel nameServerChannel = this.buildChannel(nameServerTarget);
     NameServerGrpc.NameServerBlockingStub nameServerStub;
@@ -35,8 +34,6 @@ public class ClientService {
       NameServerOuterClass.LookupRequest lookupRequest;
       lookupRequest = NameServerOuterClass.LookupRequest.newBuilder().
                       setName(service).setQualifier(qualifier).build();
-
-      System.out.println("built LookupRequest:\nserviceName: " + service + "\nqualifier: " + qualifier + "\n");
                       
       NameServerOuterClass.LookupResponse lookupResponse;
       lookupResponse = nameServerStub.lookup(lookupRequest);
@@ -48,7 +45,7 @@ public class ClientService {
       if (addressList.isEmpty())
         return "";
       
-      System.out.println(addressList.get(0));
+      System.out.println("Connected to: " + addressList.get(0));
       
       return addressList.get(0);
     } catch (StatusRuntimeException e) {

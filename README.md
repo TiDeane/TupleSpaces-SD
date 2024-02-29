@@ -2,11 +2,9 @@
 
 Distributed Systems Project 2024
 
-*(fill the line below with the group identifier, for example A25 or T25, and then delete this line)*  
-**Group GXX**
+**Group A02**
 
-*(choose one of the following levels and erase the other one)*  
-**Difficulty level: I am Death incarnate! | Bring 'em on!**
+**Difficulty level: I am Death incarnate!**
 
 
 ### Code Identification
@@ -17,20 +15,18 @@ code dependency management, to ensure your code runs using the correct component
 
 ### Team Members
 
-*(fill the table below with the team members, and then delete this line)*
-
-| Number | Name              | User                             | Email                               |
-|--------|-------------------|----------------------------------|-------------------------------------|
-| 11111  | Alice Distributed | <https://github.com/AliceUser>   | <mailto:alice@tecnico.ulisboa.pt>   |
-| 22222  | Bob Systems       | <https://github.com/BobUser>     | <mailto:bob@tecnico.ulisboa.pt>     |
-| 33333  | Charlie Rules     | <https://github.com/CharlieUser> | <mailto:charlie@tecnico.ulisboa.pt> |
+| Number | Name              | User                             | Email                                 |
+|--------|-------------------|----------------------------------|---------------------------------------|
+| 103811 | Tiago Deane       | <https://github.com/TiDeane>     | <mailto:tiagodeane@tecnico.ulisboa.pt>|
+| 104145 | Artur Krystopchuk | <https://github.com/ArturKrys>   | <mailto:bob@tecnico.ulisboa.pt>       |
+| 93718  | Guilherme Barata  | <https://github.com/GuiBarata216>| <mailto:guilherme.barata@tecnico.ulisboa.pt>|
 
 ## Getting Started
 
 The overall system is made up of several modules. The different types of servers are located in _ServerX_ (where X denotes stage 1, 2 or 3). 
 The clients is in _Client_.
-The definition of messages and services is in _Contract_. The future naming server
-is in _NamingServer_.
+The definition of messages and services is in _Contract_. The naming server
+is in _NameServer_.
 
 See the [Project Statement](https://github.com/tecnico-distsys/TupleSpaces) for a complete domain and system description.
 
@@ -53,6 +49,38 @@ To compile and install all modules:
 ```s
 mvn clean install
 ```
+
+Start a virtual environment, running the following commands:
+
+```s
+python3 -m venv .venv
+.venv\Scripts\activate
+python -m pip install grpcio
+python -m pip install grpcio-tools
+```
+
+Then, inside the ``Contract\`` folder, run ``mvn exec:exec``. After this, the program will be ready for running.
+
+## Running Instructions
+
+### NameServer
+
+While inside your virtual environment, execute ``python3 server.py`` inside the ``NameServer\`` folder.
+
+You do not need to use the virtual environment for any further steps.
+
+### TupleSpace Servers
+
+Afterwards, you can run any number of TupleSpace servers by executing ``mvn exec:java -D exec.args="<port> <qualifier>"`` inside the ``ServerR1\`` folder. The server's IP is always _localhost_.
+
+Each server will automatically connect to the NameServer to register itself, and again to remove itself upon termination.
+
+### Clients
+
+You can then connect clients to the servers by executing ``mvn exec:java`` inside the ``Client\`` folder.
+Clients will automatically connect to the NameServer to look for available servers with the name "**TupleSpace**" and qualifier "**A**", choosing the first one from the list returned by the NameServer or shutting down if no servers are available.
+
+The NameServer returns all servers with the given service name and qualifier, or all servers with the given service name if no qualifier is specified.
 
 ## Built With
 

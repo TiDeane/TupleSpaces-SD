@@ -85,14 +85,4 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 		responseObserver.onCompleted();		
 	}
 
-	/*@Override
-	public void lookup(LookupRequest request, StreamObserver<LookupResponse> responseObserver) {
-		List<String> servers = serverState.getTupleSpacesState();
-
-		TupleSpacesCentralized.LookupResponse response = TupleSpacesCentralized.LookupResponse.newBuilder()
-			.addAllServers(servers).build();
-
-		responseObserver.onNext(response);
-		responseObserver.onCompleted();		
-	}*/
 }

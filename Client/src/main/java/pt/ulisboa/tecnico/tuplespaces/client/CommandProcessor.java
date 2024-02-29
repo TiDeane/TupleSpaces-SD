@@ -32,7 +32,8 @@ public class CommandProcessor {
 
         String target = clientService.getServer(nameServerTarget, service, qualifier);
         if (target.isEmpty()) {
-            System.out.println("There are no available servers with the given service name");
+            System.out.println("There are no available servers with the given service name, " + 
+                                "or with the given service name and qualifier");
             return;
         }
 

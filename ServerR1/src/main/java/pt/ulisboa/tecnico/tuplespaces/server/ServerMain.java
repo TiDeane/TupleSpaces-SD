@@ -8,8 +8,6 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.StatusRuntimeException;
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized;
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
 
@@ -31,10 +29,10 @@ public class ServerMain {
 			return;
 		}
 
-		final String host = "localhost"; // Define under pom.xml?
+		final String host = "localhost";
 		final int port = Integer.parseInt(args[0]);
 		final String qualifier = args[1];
-		final int nameServerPort = 5001; // Define under pom.xml?
+		final int nameServerPort = 5001;
 		final BindableService impl = new ServerServiceImpl();
 
 		// Create a new server to listen on port
@@ -69,6 +67,25 @@ public class ServerMain {
 
 		// Server threads are running in the background.
 		System.out.println("Server started");
+
+		// Removes server from the NameServer upon shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+
+			try {
+				NameServerOuterClass.DeleteRequest deleteRequest;
+	
+				deleteRequest = NameServerOuterClass.DeleteRequest.newBuilder().
+					setName("TupleSpace").setAddress(localAddress).build();
+	
+				stub.delete(deleteRequest);
+	
+			} catch (StatusRuntimeException e) {
+				System.out.println("Caught exception with description: " + e.getStatus().getDescription());
+			}
+            System.out.println("Shutting down server...");
+            server.shutdown();
+            System.out.println("Server shut down.");
+        }));
 
 		// Do not exit the main thread. Wait until server is terminated.
 		server.awaitTermination();

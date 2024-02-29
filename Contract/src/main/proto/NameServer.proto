@@ -15,13 +15,23 @@ message RegisterResponse {
 message LookupRequest {
     string name = 1;
     string qualifier = 2;
-  }
+}
   
-  message LookupResponse {
+message LookupResponse {
     repeated string servers = 1;
-  }
+}
+
+message DeleteRequest {
+    string name = 1;
+    string address = 2;
+}
+
+message DeleteResponse {
+    // Returns null or throws detailed exception
+}
 
 service NameServer {
     rpc register(RegisterRequest) returns (RegisterResponse);
     rpc lookup(LookupRequest) returns (LookupResponse);
+    rpc delete(DeleteRequest) returns (DeleteResponse);
 }

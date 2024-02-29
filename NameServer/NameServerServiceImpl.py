@@ -13,7 +13,8 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
 
     def register(self, request, context):
 
-        print(request)
+        print("--------------------")
+        print("New register received:\n" + str(request))
 
         name = request.name
         qualifier = request.qualifier
@@ -24,10 +25,10 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
             serverEntry = ServerEntry(host=host, port=port, qualifier=qualifier)
 
             if (self.nameServer.checkServiceInMap(name)):
-                print("Service is already in the NameServer, getting ServiceEntry")
+                print("Service is already in the NameServer, adding ServiceEntry")
                 serviceEntry = self.nameServer.getServiceEntry(name)
             else:
-                print("--------------------\nRegistered new Server:\n" + str(serverEntry))
+                print("Registered new Server:\n" + str(serverEntry))
                 serviceEntry = ServiceEntry(serviceName=name)
                 self.nameServer.registerServiceEntry(serviceEntry)
             
@@ -35,7 +36,7 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
 
             return pb2.RegisterResponse()
         except Exception as e:
-            print("Failed to register new Server, with exception:\n" + e)
+            print("Failed to register new Server, with exception:\n" + str(e))
             
             context.set_details("Not possible to register the server")
             context.set_code(pb2.StatusCode.INTERNAL)
@@ -43,7 +44,8 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
         
     def lookup(self, request, context):
 
-        print(request)
+        print("--------------------")
+        print("New lookup request:\n" + str(request))
 
         name = request.name
         qualifier = request.qualifier
@@ -55,18 +57,54 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
                 return pb2.LookupResponse(servers=serverList)
             
             serviceEntry = self.nameServer.getServiceEntry(serviceName=name)
-            for serverEntry in serviceEntry.servers:
-                if serverEntry.qualifier == qualifier:
-                    address = serverEntry.host + ":" + serverEntry.port
-                    print("Adding serverEntry " + str(serverEntry))
-                    serverList.append(address)
 
-            print("Returning filled list\n")
+            if qualifier == "":
+                # Adds all servers if qualifier is not specified
+                for serverEntry in serviceEntry.servers:
+                    address = serverEntry.host + ":" + serverEntry.port
+                    serverList.append(address)
+            else:
+                # Adds all servers with the given qualifier
+                for serverEntry in serviceEntry.servers:
+                    if serverEntry.qualifier == qualifier:
+                        address = serverEntry.host + ":" + serverEntry.port
+                        serverList.append(address)
+
             return pb2.LookupResponse(servers=serverList)
         except Exception as e:
-            print("Failed to find a server, with exception:\n" + str(e))
+            print("Failed to find a server, with exception: " + str(e))
             
             context.set_details("Failed when looking for available servers")
             context.set_code(pb2.StatusCode.INTERNAL)
             return pb2.LookupResponse()
 
+    def delete(self, request, context):
+
+        print("--------------------")
+        print("New delete request:\n" + str(request))
+
+        name = request.name
+        address = request.address
+        host, port = address.split(':')
+
+        try:
+            if not self.nameServer.checkServiceInMap(name):
+                print("Service not in map, throwing exception\n")
+                context.set_details("Not possible to delete the server")
+                context.set_code(pb2.StatusCode.INTERNAL)
+                return pb2.DeleteResponse()
+            
+            serviceEntry = self.nameServer.getServiceEntry(serviceName=name)
+            
+            serverEntry = serviceEntry.getServerEntry(host, port)
+            serviceEntry.removeServerEntry(serverEntry)
+
+            print("Returning list")
+
+            return pb2.DeleteResponse()
+        except Exception as e:
+            print("Failed to delete the Server, with exception: " + str(e))
+            
+            context.set_details("Not possible to delete the server")
+            context.set_code(pb2.StatusCode.INTERNAL)
+            return pb2.DeleteResponse()
