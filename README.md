@@ -42,51 +42,84 @@ javac -version
 mvn -version
 ```
 
-### Installation
+## Installation
 
-To compile and install all modules:
+### Server and Client
+
+First, go the ``ServerR1\`` folder and execute the following command:
 
 ```s
-mvn clean install
+mvn install
 ```
 
-Start a virtual environment, running the following commands:
+Afterwards, go to the ``Client\`` folder and execute the same command.
 
-**Windows:**
+### Contract
+
+For the Contract folder, start a virtual environment by running the following commands:
+
+For **Windows:**
 ```s
 python -m venv .venv
+
 .venv\Scripts\activate
+
 python -m pip install grpcio
+
 python -m pip install grpcio-tools
 ```
 
-**Linux:**
+Or **Linux:**
 ```s
 python3 -m venv .venv
+
 source .venv/bin/activate
+
 python3 -m pip install grpcio
+
 python3 -m pip install grpcio-tools
 ```
 
-Then, inside the ``Contract\`` folder, run ``mvn exec:exec``. After this, the program will be ready for running.
+Then, inside the ``Contract\`` folder, run the following commands:
+
+```s
+mvn install
+
+mvn exec:exec
+```
 
 ## Running Instructions
 
 ### NameServer
 
-While inside your virtual environment, execute ``python3 server.py`` inside the ``NameServer\`` folder.
+While inside your virtual environment, go to the ``NameServer\`` folder and execute the following command:
+
+```s
+python3 server.py
+```
 
 You do not need to use the virtual environment for any further steps.
 
 ### TupleSpace Servers
 
-Afterwards, you can run any number of TupleSpace servers by executing ``mvn exec:java -D exec.args="<port> <qualifier>"`` inside the ``ServerR1\`` folder. The server's IP is always _localhost_.
+Afterwards, you can run any number of TupleSpace servers by going into the ``ServerR1\`` folder and running the following command:
 
-Each server will automatically connect to the NameServer to register itself, and again to remove itself upon termination.
+```s
+mvn exec:java -D exec.args="<port> <qualifier>"
+``` 
+
+Where **\<port\>** is the server's port and **\<qualifier\>** is 'A', 'B' or 'C'. The server's IP is always _localhost_.
+
+Each server will automatically connect to the NameServer to register itself, and again upon termination to remove/unregister itself.
 
 ### Clients
 
-You can then connect clients to the servers by executing ``mvn exec:java`` inside the ``Client\`` folder.
+You can connect clients to the servers by going into the ``Client\`` folder and running:
+
+```s
+mvn exec:java
+```
+
 Clients will automatically connect to the NameServer to look for available servers with the name "**TupleSpace**" and qualifier "**A**", choosing the first one from the list returned by the NameServer or shutting down if no servers are available.
 
 The NameServer returns all servers with the given service name and qualifier, or all servers with the given service name if no qualifier is specified.
