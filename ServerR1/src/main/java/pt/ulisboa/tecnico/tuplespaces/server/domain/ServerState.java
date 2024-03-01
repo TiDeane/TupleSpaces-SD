@@ -36,7 +36,6 @@ public class ServerState {
   }
 
   public synchronized List<String> getTupleSpacesState() {
-    // ̶T̶O̶D̶O̶
     return this.tuples;
   }
 }
