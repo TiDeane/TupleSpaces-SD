@@ -87,8 +87,7 @@ public class ClientService {
         System.out.println(result);
       }
       else {
-        System.out.printf("Caught exception with description: " + 
-          "Tuple must have the format <element[,more_elements]>" + 
+        System.out.printf("Tuple must have the format <element[,more_elements]>" + 
           " but received: %s\n", result);
       }
     } catch (StatusRuntimeException e) {
@@ -112,8 +111,7 @@ public class ClientService {
         System.out.println(result);
       }
       else {
-        System.out.printf("Caught exception with description: " + 
-          "Tuple must have the format <element[,more_elements]>" + 
+        System.out.printf("Tuple must have the format <element[,more_elements]>" + 
           " but received: %s\n", result);
       }
     } catch (StatusRuntimeException e) {
@@ -132,20 +130,14 @@ public class ClientService {
       getTupleSpacesStateResponse = stub.getTupleSpacesState(getTupleSpacesStateRequest);
       TupleSpace = getTupleSpacesStateResponse.getTupleList();
 
-      if (TupleSpace.isEmpty()) {
-        System.out.println("There is no tuple in this tuple space.");
-        return;    
-      }
-
       /* verify arguments given by server */
       for (String tuple : TupleSpace) {
         if (isTupleValid(tuple)) {
           continue;
         }
         else {
-          System.out.printf("Caught exception with description: " + 
-            "Tuple must have the format <element[,more_elements]>" + 
-            " but received: %s\n", tuple);
+          System.out.printf("Tuple must have the format <element[,more_elements]>" + 
+            " but one of the tuples are: %s\n", tuple);
           return;
         }
       }
