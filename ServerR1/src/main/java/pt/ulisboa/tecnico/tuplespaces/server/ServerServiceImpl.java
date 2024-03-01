@@ -39,14 +39,16 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	@Override
 	public void take(TakeRequest request, StreamObserver<TakeResponse> responseObserver) {
 		String pattern = request.getSearchPattern();
-		String tuple = serverState.take(pattern);
+		String tuple;
 
-		if (!isTupleValid(tuple)) {
+		if (!isTupleValid(pattern)) {
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
 		}
 
 		synchronized (serverState) {
+			tuple = serverState.take(pattern);
+
 			while (tuple == null) {
 				try {
 					serverState.wait();
@@ -68,14 +70,16 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	@Override
 	public void read(ReadRequest request, StreamObserver<ReadResponse> responseObserver) {
 		String pattern = request.getSearchPattern();
-		String tuple = serverState.read(pattern);
+		String tuple;
 
-		if (!isTupleValid(tuple)) {
+		if (!isTupleValid(pattern)) {
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
 		}
 
 		synchronized (serverState) {
+			tuple = serverState.read(pattern);
+			
 			while (tuple == null) {
 				try {
 					serverState.wait();

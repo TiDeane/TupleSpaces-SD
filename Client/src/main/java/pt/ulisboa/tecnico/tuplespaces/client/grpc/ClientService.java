@@ -12,10 +12,11 @@ import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
 
 
 public class ClientService {
-  private static final String BGN_TUPLE = "<";
-  private static final String END_TUPLE = ">";
   /*  This class contains the methods for building a channel and stub, as well
       as individual methods for each remote operation of this service. */
+
+  private static final String BGN_TUPLE = "<";
+  private static final String END_TUPLE = ">";
 
   public ManagedChannel buildChannel(String target) {
     return ManagedChannelBuilder.forTarget(target).usePlaintext().build();
@@ -46,7 +47,7 @@ public class ClientService {
       if (addressList.isEmpty())
         return "";
       
-      System.out.println("Connected to: " + addressList.get(0));
+      // System.out.println("Connected to: " + addressList.get(0));
       
       return addressList.get(0);
     } catch (StatusRuntimeException e) {
@@ -66,6 +67,8 @@ public class ClientService {
       stub.put(putRequest);
 
       System.out.println("OK");
+      System.out.print("\n");
+      
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
@@ -85,6 +88,7 @@ public class ClientService {
       if (isTupleValid(result)) {
         System.out.println("OK");
         System.out.println(result);
+        System.out.print("\n");
       }
       else {
         System.out.printf("Tuple must have the format <element[,more_elements]>" + 
@@ -109,6 +113,7 @@ public class ClientService {
       if (isTupleValid(result)) {
         System.out.println("OK");
         System.out.println(result);
+        System.out.print("\n");
       }
       else {
         System.out.printf("Tuple must have the format <element[,more_elements]>" + 
@@ -123,15 +128,15 @@ public class ClientService {
   public void getTupleSpacesState(String qualifier, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
     TupleSpacesCentralized.GetTupleSpacesStateRequest getTupleSpacesStateRequest;
     TupleSpacesCentralized.GetTupleSpacesStateResponse getTupleSpacesStateResponse;
-    List<String> TupleSpace;
+    List<String> tupleSpace;
 
     try {
       getTupleSpacesStateRequest = TupleSpacesCentralized.GetTupleSpacesStateRequest.getDefaultInstance();
       getTupleSpacesStateResponse = stub.getTupleSpacesState(getTupleSpacesStateRequest);
-      TupleSpace = getTupleSpacesStateResponse.getTupleList();
+      tupleSpace = getTupleSpacesStateResponse.getTupleList();
 
       /* verify arguments given by server */
-      for (String tuple : TupleSpace) {
+      for (String tuple : tupleSpace) {
         if (isTupleValid(tuple)) {
           continue;
         }
@@ -143,9 +148,9 @@ public class ClientService {
       }
 
       System.out.println("OK");
-      for (String tuple : TupleSpace) {
-        System.out.println(tuple);
-      }
+      System.out.println(tupleSpace);
+      System.out.print("\n");
+
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
@@ -153,7 +158,9 @@ public class ClientService {
   }
 
   	private boolean isTupleValid(String tuple){
-        if (!tuple.substring(0,1).equals(BGN_TUPLE) 
+        if (tuple.length() < 2 
+            ||
+            !tuple.substring(0,1).equals(BGN_TUPLE) 
             || 
             !tuple.endsWith(END_TUPLE)) {
             return false;
