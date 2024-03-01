@@ -47,7 +47,6 @@ public class ClientService {
       if (addressList.isEmpty())
         return "";
       
-      // System.out.println("Connected to: " + addressList.get(0));
       
       return addressList.get(0);
     } catch (StatusRuntimeException e) {
