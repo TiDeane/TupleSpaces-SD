@@ -11,20 +11,23 @@ PORT = 5001
 
 if __name__ == '__main__':
     try:
+        dFlag = False
+
+        if len(sys.argv) == 2 and sys.argv[1] == "-debug":
+            dFlag = True
 
         # create server
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
         # add service
-        pb2_grpc.add_NameServerServicer_to_server(NameServerServiceImpl(), server)
+        pb2_grpc.add_NameServerServicer_to_server(NameServerServiceImpl(dFlag), server)
         # listen on port
         server.add_insecure_port('[::]:'+str(PORT))
         # start server
         server.start()
-        # print message
+        
         print("Server listening on port " + str(PORT))
-        # print termination message
         print("Press CTRL+C to terminate")
-        # wait for server to finish
+        
         server.wait_for_termination()
 
     except KeyboardInterrupt:

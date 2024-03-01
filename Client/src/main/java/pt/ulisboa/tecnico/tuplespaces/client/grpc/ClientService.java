@@ -47,7 +47,6 @@ public class ClientService {
       if (addressList.isEmpty())
         return "";
       
-      
       return addressList.get(0);
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + e.getStatus().getDescription());
@@ -67,7 +66,7 @@ public class ClientService {
 
       System.out.println("OK");
       System.out.print("\n");
-      
+
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());

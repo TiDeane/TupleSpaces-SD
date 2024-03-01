@@ -98,6 +98,8 @@ While inside your virtual environment, go to the ``NameServer\`` folder and exec
 python3 server.py
 ```
 
+For additional debug information, append ``-debug`` to the end of the command.
+
 You do not need to use the virtual environment for any further steps.
 
 ### TupleSpace Servers
@@ -108,7 +110,7 @@ Afterwards, you can run any number of TupleSpace servers by going into the ``Ser
 mvn exec:java -D exec.args="<port> <qualifier>"
 ``` 
 
-Where **\<port\>** is the server's port and **\<qualifier\>** is 'A', 'B' or 'C'. The server's IP is always _localhost_.
+Where **\<port\>** is the server's port and **\<qualifier\>** is 'A', 'B' or 'C'. The server's IP is always _localhost_. For additional debug information, append ``-Ddebug`` to the end of the command.
 
 Each server will automatically connect to the NameServer to register itself, and again upon termination to remove/unregister itself.
 
@@ -120,7 +122,7 @@ You can connect clients to the servers by going into the ``Client\`` folder and 
 mvn exec:java
 ```
 
-Clients will automatically connect to the NameServer to look for available servers with the name "**TupleSpace**" and qualifier "**A**", choosing the first one from the list returned by the NameServer or shutting down if no servers are available.
+Clients will automatically connect to the NameServer to look for available servers with the name "**TupleSpace**" and qualifier "**A**", choosing the first one from the list returned by the NameServer or shutting down if no servers are available. For additional debug information, append ``-Ddebug`` to the end of the command.
 
 The NameServer returns all servers with the given service name and qualifier, or all servers with the given service name if no qualifier is specified.
 

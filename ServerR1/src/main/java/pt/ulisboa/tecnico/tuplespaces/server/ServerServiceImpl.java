@@ -14,13 +14,29 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
     private static final String BGN_TUPLE = "<";
     private static final String END_TUPLE = ">";
 
+	private boolean debugFlag = false;
+
 	private ServerState serverState = new ServerState();
+
+	public ServerServiceImpl(boolean dFlag) {
+		debugFlag = dFlag;
+	}
+
+	/** Helper method to print debug messages. */
+	private void debug(String debugMessage) {
+		if (debugFlag)
+			System.err.println(debugMessage);
+	}
 
 	@Override
 	public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
 		String tuple = request.getNewTuple();
 
+		debug("--------------------");
+		debug("Received Put request with tuple: " + tuple);
+
 		if (!isTupleValid(tuple)) {
+			debug("Tuple is not valid, sending exception");
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
 		}
@@ -30,6 +46,7 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 			serverState.notifyAll();
 		}
 
+		debug("Successfully put tuple, sending response");
 		TupleSpacesCentralized.PutResponse response = PutResponse.newBuilder().build();
 
 		responseObserver.onNext(response);
@@ -41,13 +58,21 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 		String pattern = request.getSearchPattern();
 		String tuple;
 
+		debug("--------------------");
+		debug("Received Take request with pattern: " + pattern);
+
 		if (!isTupleValid(pattern)) {
+			debug("Pattern is not valid, sending exception");
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
 		}
 
 		synchronized (serverState) {
 			tuple = serverState.take(pattern);
+
+			if (tuple == null)
+				debug("There is no tuple that matches the given pattern, " +
+					  "putting the client on hold");
 
 			while (tuple == null) {
 				try {
@@ -60,6 +85,7 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 			}
 		}
 
+		debug("Successfully took a tuple, sending response");
 		TupleSpacesCentralized.TakeResponse response = TakeResponse.newBuilder()
 			.setResult(tuple).build();
 
@@ -72,6 +98,9 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 		String pattern = request.getSearchPattern();
 		String tuple;
 
+		debug("--------------------");
+		debug("Received Read request with pattern: " + pattern);
+
 		if (!isTupleValid(pattern)) {
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
@@ -79,6 +108,10 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 
 		synchronized (serverState) {
 			tuple = serverState.read(pattern);
+
+			if (tuple == null)
+				debug("There is no tuple that matches the given pattern, " +
+					  "putting the client on hold");
 			
 			while (tuple == null) {
 				try {
@@ -91,6 +124,7 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 			}
 		}
 
+		debug("Successfully read the tuple, sending response");
 		TupleSpacesCentralized.ReadResponse response = ReadResponse.newBuilder()
 			.setResult(tuple).build();
 
@@ -101,6 +135,9 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	@Override
 	public void getTupleSpacesState(GetTupleSpacesStateRequest request, StreamObserver<GetTupleSpacesStateResponse> responseObserver) {
 		List<String> tuples = serverState.getTupleSpacesState();
+
+		debug("--------------------");
+		debug("Received GetTupleSpacesState request, sending response");
 
 		TupleSpacesCentralized.GetTupleSpacesStateResponse response = TupleSpacesCentralized.GetTupleSpacesStateResponse.newBuilder()
 			.addAllTuple(tuples).build();

@@ -43,7 +43,7 @@ public class ServerMain {
 		final int port = Integer.parseInt(args[0]);
 		final String qualifier = args[1];
 		final int nameServerPort = 5001;
-		final BindableService impl = new ServerServiceImpl();
+		final BindableService impl = new ServerServiceImpl(DEBUG_FLAG);
 
 		// Create a new server to listen on port
 		Server server = ServerBuilder.forPort(port).addService(impl).build();
@@ -52,6 +52,7 @@ public class ServerMain {
 		final String target = host + ":" + nameServerPort;
 
 		// Building channel to NameServer
+		debug("Connecting to NameServer...");
 		final ManagedChannel channel = ManagedChannelBuilder.forTarget(target).usePlaintext().build();
 		NameServerGrpc.NameServerBlockingStub stub = NameServerGrpc.newBlockingStub(channel);
 
@@ -63,7 +64,8 @@ public class ServerMain {
 				setName("TupleSpace").setQualifier(qualifier).
 				setAddress(localAddress).build();
 
-				debug("Sending Registering Request of localAdress: " + localAddress + " and Qualifier: " + qualifier);
+				debug("Sending Register request of service TupleSpace with address " +
+						localAddress + " and Qualifier " + qualifier);
 
       		stub.register(registerRequest);
 
@@ -82,14 +84,13 @@ public class ServerMain {
 
 		// Removes server from the NameServer upon shutdown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-
 			try {
 				NameServerOuterClass.DeleteRequest deleteRequest;
 	
 				deleteRequest = NameServerOuterClass.DeleteRequest.newBuilder().
 					setName("TupleSpace").setAddress(localAddress).build();
 
-					debug("Sending Delete Request of localAdress: " + localAddress);
+				debug("Sending Delete request of service TupleSpace with address " + localAddress);
 	
 				stub.delete(deleteRequest);
 	
