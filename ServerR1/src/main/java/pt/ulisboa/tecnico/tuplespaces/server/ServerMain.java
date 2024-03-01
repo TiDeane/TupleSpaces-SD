@@ -14,12 +14,22 @@ import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
 
 public class ServerMain {
 
+	/** Set flag to true to print debug messages. 
+	 * The flag can be set using the -Ddebug command line option. */
+	private static final boolean DEBUG_FLAG = (System.getProperty("debug") != null);
+
+	/** Helper method to print debug messages. */
+	private static void debug(String debugMessage) {
+		if (DEBUG_FLAG)
+			System.err.println(debugMessage);
+	}
+
     public static void main(String[] args) throws IOException, InterruptedException {
 
 		// receive and print arguments
-		System.out.printf("Received %d arguments%n", args.length);
+		debug(String.format("Received %d arguments", args.length));
 		for (int i = 0; i < args.length; i++) {
-			System.out.printf("arg[%d] = %s%n", i, args[i]);
+			debug(String.format("arg[%d] = %s", i, args[i]));
 		}
 
 		// check arguments
@@ -53,6 +63,8 @@ public class ServerMain {
 				setName("TupleSpace").setQualifier(qualifier).
 				setAddress(localAddress).build();
 
+				debug("Sending Registering Request of localAdress: " + localAddress + " and Qualifier: " + qualifier);
+
       		stub.register(registerRequest);
 
 		} catch (StatusRuntimeException e) {
@@ -76,6 +88,8 @@ public class ServerMain {
 	
 				deleteRequest = NameServerOuterClass.DeleteRequest.newBuilder().
 					setName("TupleSpace").setAddress(localAddress).build();
+
+					debug("Sending Delete Request of localAdress: " + localAddress);
 	
 				stub.delete(deleteRequest);
 	

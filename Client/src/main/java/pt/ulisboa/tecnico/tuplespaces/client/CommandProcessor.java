@@ -21,6 +21,7 @@ public class CommandProcessor {
     private static final String SET_DELAY = "setdelay";
     private static final String EXIT = "exit";
     private static final String GET_TUPLE_SPACES_STATE = "getTupleSpacesState";
+    private boolean debug_flag;
 
     private final ClientService clientService;
 
@@ -28,7 +29,15 @@ public class CommandProcessor {
         this.clientService = clientService;
     }
 
-    void parseInput(String nameServerTarget, String service, String qualifier) {
+    /** Helper method to print debug messages. */
+	private void debug(String debugMessage) {
+		if (debug_flag)
+			System.err.println(debugMessage);
+	}
+
+    void parseInput(String nameServerTarget, String service, String qualifier, boolean dFlag) {
+
+        debug_flag = dFlag;
 
         String target = clientService.getServer(nameServerTarget, service, qualifier);
         if (target.isEmpty()) {
@@ -37,11 +46,15 @@ public class CommandProcessor {
             return;
         }
 
+        debug("Connected to: " + target);
+
         ManagedChannel channel = clientService.buildChannel(target);
         TupleSpacesGrpc.TupleSpacesBlockingStub stub = clientService.buildStub(channel);
     
         try (Scanner scanner = new Scanner(System.in)) {
             boolean exit = false;
+
+            debug("The Client is active and the Server is waiting for a request.");
 
             while (!exit) {
                 System.out.print("> ");
@@ -95,6 +108,7 @@ public class CommandProcessor {
         
         // get the tuple
         String tuple = split[1];
+        debug("Doing a put request with tuple: " + tuple);
         clientService.put(tuple, stub);
     }
 
@@ -106,6 +120,7 @@ public class CommandProcessor {
         }
 
         String pattern = split[1];
+        debug("Doing a read request with pattern: " + pattern);
         clientService.read(pattern, stub);
     }
 
@@ -118,6 +133,7 @@ public class CommandProcessor {
         }
         
         String pattern = split[1];
+        debug("Doing a take request with pattern: " + pattern);
         clientService.take(pattern, stub);
     }
 
@@ -130,6 +146,7 @@ public class CommandProcessor {
         String qualifier = split[1];
 
         // get the tuple spaces state
+        debug("Getting TupleSpaceState with qualifier: " + qualifier);
         clientService.getTupleSpacesState(qualifier, stub);
     }
 
@@ -149,6 +166,7 @@ public class CommandProcessor {
       }
 
       try {
+        debug("Going to sleep.");
         Thread.sleep(time*1000);
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
