@@ -12,7 +12,8 @@ import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
 
 
 public class ClientService {
-
+  private static final String BGN_TUPLE = "<";
+  private static final String END_TUPLE = ">";
   /*  This class contains the methods for building a channel and stub, as well
       as individual methods for each remote operation of this service. */
 
@@ -81,8 +82,14 @@ public class ClientService {
       takeResponse = stub.take(takeRequest);
       result = takeResponse.getResult();
       
-      System.out.println("OK");
-      System.out.println(result);
+      if (isTupleValid(result)) {
+        System.out.println("OK");
+        System.out.println(result);
+      }
+      else {
+        System.out.printf("Tuple must have the format <element[,more_elements]>" + 
+          " but received: %s\n", result);
+      }
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
@@ -99,8 +106,14 @@ public class ClientService {
       readResponse = stub.read(readRequest);
       result = readResponse.getResult();
 
-      System.out.println("OK");
-      System.out.println(result);
+      if (isTupleValid(result)) {
+        System.out.println("OK");
+        System.out.println(result);
+      }
+      else {
+        System.out.printf("Tuple must have the format <element[,more_elements]>" + 
+          " but received: %s\n", result);
+      }
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
@@ -108,8 +121,6 @@ public class ClientService {
   }
 
   public void getTupleSpacesState(String qualifier, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
-    /* NOTE: não é usado o qualifier logo vai sempre buscar o mesmo server */
-    
     TupleSpacesCentralized.GetTupleSpacesStateRequest getTupleSpacesStateRequest;
     TupleSpacesCentralized.GetTupleSpacesStateResponse getTupleSpacesStateResponse;
     List<String> TupleSpace;
@@ -118,6 +129,18 @@ public class ClientService {
       getTupleSpacesStateRequest = TupleSpacesCentralized.GetTupleSpacesStateRequest.getDefaultInstance();
       getTupleSpacesStateResponse = stub.getTupleSpacesState(getTupleSpacesStateRequest);
       TupleSpace = getTupleSpacesStateResponse.getTupleList();
+
+      /* verify arguments given by server */
+      for (String tuple : TupleSpace) {
+        if (isTupleValid(tuple)) {
+          continue;
+        }
+        else {
+          System.out.printf("Tuple must have the format <element[,more_elements]>" + 
+            " but one of the tuples are: %s\n", tuple);
+          return;
+        }
+      }
 
       System.out.println("OK");
       for (String tuple : TupleSpace) {
@@ -128,4 +151,15 @@ public class ClientService {
         e.getStatus().getDescription());
     }
   }
+
+  	private boolean isTupleValid(String tuple){
+        if (!tuple.substring(0,1).equals(BGN_TUPLE) 
+            || 
+            !tuple.endsWith(END_TUPLE)) {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
 }
