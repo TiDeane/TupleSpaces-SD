@@ -18,7 +18,7 @@ code dependency management, to ensure your code runs using the correct component
 | Number | Name              | User                             | Email                                 |
 |--------|-------------------|----------------------------------|---------------------------------------|
 | 103811 | Tiago Deane       | <https://github.com/TiDeane>     | <mailto:tiagodeane@tecnico.ulisboa.pt>|
-| 104145 | Artur Krystopchuk | <https://github.com/ArturKrys>   | <mailto:bob@tecnico.ulisboa.pt>       |
+| 104145 | Artur Krystopchuk | <https://github.com/ArturKrys>   | <mailto:arturkrystopchuk@tecnico.ulisboa.pt>|
 | 93718  | Guilherme Barata  | <https://github.com/GuiBarata216>| <mailto:guilherme.barata@tecnico.ulisboa.pt>|
 
 ## Getting Started
