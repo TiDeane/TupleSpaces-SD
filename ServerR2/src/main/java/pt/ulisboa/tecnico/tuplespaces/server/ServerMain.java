@@ -77,8 +77,6 @@ public class ServerMain {
 			return;
 		}
 
-		System.out.println("out");
-
 		// Start the server
 		server.start();
 

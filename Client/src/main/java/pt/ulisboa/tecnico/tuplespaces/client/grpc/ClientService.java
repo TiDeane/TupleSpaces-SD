@@ -1,14 +1,17 @@
 package pt.ulisboa.tecnico.tuplespaces.client.grpc;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized;
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
+import pt.ulisboa.tecnico.tuplespaces.client.PutObserver;
+import pt.ulisboa.tecnico.tuplespaces.client.util.OrderedDelayer;
 
 
 public class ClientService {
@@ -18,15 +21,28 @@ public class ClientService {
   private static final String BGN_TUPLE = "<";
   private static final String END_TUPLE = ">";
 
+  private int numServers;
+  private OrderedDelayer delayer;
+
+  // This array is instantialized inside CommandProcesssor
+  public TupleSpacesReplicaGrpc.TupleSpacesReplicaStub[] stubs;
+
+  public void createDelayer(int numServers) {
+    /* The delayer can be used to inject delays to the sending of requests to the 
+      different servers, according to the per-server delays that have been set  */
+    delayer = new OrderedDelayer(numServers);
+  }
+
   public ManagedChannel buildChannel(String target) {
     return ManagedChannelBuilder.forTarget(target).usePlaintext().build();
   }
 
-  public TupleSpacesGrpc.TupleSpacesBlockingStub buildStub(ManagedChannel channel) {
-    return TupleSpacesGrpc.newBlockingStub(channel);
+  public TupleSpacesReplicaGrpc.TupleSpacesReplicaStub buildStub(ManagedChannel channel) {
+    return TupleSpacesReplicaGrpc.newStub(channel);
   }
 
-  public String getServer(String nameServerTarget, String service, String qualifier) {
+  public List<String> getServers(String nameServerTarget, String service, String qualifier) {
+    List<String> addressList;
     
     final ManagedChannel nameServerChannel = this.buildChannel(nameServerTarget);
     NameServerGrpc.NameServerBlockingStub nameServerStub;
@@ -40,29 +56,39 @@ public class ClientService {
       NameServerOuterClass.LookupResponse lookupResponse;
       lookupResponse = nameServerStub.lookup(lookupRequest);
 
-      List<String> addressList = lookupResponse.getServersList();
+      addressList = lookupResponse.getServersList();
 
       nameServerChannel.shutdownNow();
 
-      if (addressList.isEmpty())
-        return "";
+      // Now that the Lookup operation is complete, creates the delayer object
+      numServers = addressList.size();
+      createDelayer(numServers);
       
-      return addressList.get(0);
+      return addressList;
+
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + e.getStatus().getDescription());
       nameServerChannel.shutdownNow();
       
-      return "";
+      addressList = new ArrayList<String>(); // Return empty list
+      return addressList;
     }
     
   }
 
-  public void put(String tuple, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
-    TupleSpacesCentralized.PutRequest putRequest;
+  /* This method allows the command processor to set the request delay assigned to a given server */
+  public void setDelay(int id, int delay) {
+    delayer.setDelay(id, delay);
+  }
 
+  public void put(String tupleb) {
+    TupleSpacesReplicaXuLiskov.PutRequest putRequest;
+
+    // SEND TO ALL SERVERS (from stubs[])
+    /*
     try {
-      putRequest = TupleSpacesCentralized.PutRequest.newBuilder().setNewTuple(tuple).build();
-      stub.put(putRequest);
+      putRequest = TupleSpacesReplicaXuLiskov.PutRequest.newBuilder().setNewTuple(tuple).build();
+      stub.put(putRequest, new PutObserver());
 
       System.out.println("OK");
       System.out.print("\n");
@@ -71,9 +97,10 @@ public class ClientService {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
     }
+    */
   }
 
-  public void take(String pattern, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
+  /*public void take(String pattern, TupleSpacesGrpc.TupleSpacesStub stub) {
     TupleSpacesCentralized.TakeRequest takeRequest;
     TupleSpacesCentralized.TakeResponse takeResponse;
     String result;
@@ -98,7 +125,7 @@ public class ClientService {
     }
   }
 
-  public void read(String pattern, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
+  public void read(String pattern, TupleSpacesGrpc.TupleSpacesStub stub) {
     TupleSpacesCentralized.ReadRequest readRequest;
     TupleSpacesCentralized.ReadResponse readResponse;
     String result;
@@ -123,7 +150,7 @@ public class ClientService {
     }
   }
 
-  public void getTupleSpacesState(String qualifier, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
+  public void getTupleSpacesState(String qualifier, TupleSpacesGrpc.TupleSpacesStub stub) {
     TupleSpacesCentralized.GetTupleSpacesStateRequest getTupleSpacesStateRequest;
     TupleSpacesCentralized.GetTupleSpacesStateResponse getTupleSpacesStateResponse;
     List<String> tupleSpace;
@@ -133,7 +160,7 @@ public class ClientService {
       getTupleSpacesStateResponse = stub.getTupleSpacesState(getTupleSpacesStateRequest);
       tupleSpace = getTupleSpacesStateResponse.getTupleList();
 
-      /* verify arguments given by server */
+      // verify arguments given by server 
       for (String tuple : tupleSpace) {
         if (isTupleValid(tuple)) {
           continue;
@@ -153,7 +180,7 @@ public class ClientService {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
     }
-  }
+  }*/
 
   	private boolean isTupleValid(String tuple){
         if (tuple.length() < 2 

@@ -1,13 +1,15 @@
 package pt.ulisboa.tecnico.tuplespaces.client;
 
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc;
 import pt.ulisboa.tecnico.tuplespaces.client.grpc.ClientService;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc;
 //import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.PutRequest;
 //import pt.ulisboa.tecnico.tuplespaces.*;
 
 import io.grpc.ManagedChannel;
-
 import java.util.Scanner;
+
+import java.util.List;
 
 public class CommandProcessor {
 
@@ -26,8 +28,17 @@ public class CommandProcessor {
 
     private final ClientService clientService;
 
+    private int numServers;
+
+    // An array of channels
+    private ManagedChannel[] channels;
+
+    // An array of stubs
+    private TupleSpacesReplicaGrpc.TupleSpacesReplicaStub[] stubs;
+
     public CommandProcessor(ClientService clientService) {
         this.clientService = clientService;
+        this.clientService.stubs = this.stubs;
     }
 
     /** Helper method to print debug messages. */
@@ -40,17 +51,24 @@ public class CommandProcessor {
 
         debugFlag = dFlag;
 
-        String target = clientService.getServer(nameServerTarget, service, qualifier);
-        if (target.isEmpty()) {
-            System.out.println("There are no available servers with the given service name, " + 
+        List<String> servers;
+        servers = clientService.getServers(nameServerTarget, service, qualifier);
+        numServers = servers.size();
+
+        if (servers.size() < 3) {
+            System.out.println("There are not enough servers available with the given service name, " + 
                                 "or with the given service name and qualifier");
             return;
         }
 
-        debug("Successfully connected to: " + target);
+        stubs = new TupleSpacesReplicaGrpc.TupleSpacesReplicaStub[numServers];
+        channels = new ManagedChannel[numServers];
 
-        ManagedChannel channel = clientService.buildChannel(target);
-        TupleSpacesGrpc.TupleSpacesBlockingStub stub = clientService.buildStub(channel);
+        for (int i = 0; i < numServers; i += 1) {
+            channels[i] = clientService.buildChannel(servers.get(i));
+            stubs[i] = clientService.buildStub(channels[i]);
+            debug("Successfully connected to: " + servers.get(i));
+        }
     
         try (Scanner scanner = new Scanner(System.in)) {
             boolean exit = false;
@@ -61,27 +79,27 @@ public class CommandProcessor {
                 String[] split = line.split(SPACE);
                 switch (split[0]) {
                     case PUT:
-                        this.put(split, stub);
+                        this.put(split);
                         break;
 
                     case READ:
-                        this.read(split, stub);
+                        //this.read(split);
                         break;
 
                     case TAKE:
-                        this.take(split, stub);
+                        //this.take(split);
                         break;
 
                     case GET_TUPLE_SPACES_STATE:
-                        this.getTupleSpacesState(split, stub);
+                        //this.getTupleSpacesState(split);
                         break;
 
                     case SLEEP:
-                        this.sleep(split, stub);
+                        this.sleep(split);
                         break;
 
                     case SET_DELAY:
-                        this.setdelay(split, stub);
+                        this.setdelay(split);
                         break;
 
                     case EXIT:
@@ -94,10 +112,12 @@ public class CommandProcessor {
                 }
             }
         }
-        channel.shutdownNow();
+        
+        for (ManagedChannel ch : channels)
+            ch.shutdown();
     }
 
-    private void put(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
+    private void put(String[] split){
 
         // check if input is valid
         if (!this.inputIsValid(split)) {
@@ -108,10 +128,10 @@ public class CommandProcessor {
         // get the tuple
         String tuple = split[1];
         debug("Sending a Put request with tuple: " + tuple);
-        clientService.put(tuple, stub);
+        clientService.put(tuple);
     }
 
-    private void read(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
+    /*private void read(String[] split){
         // check if input is valid
         if (!this.inputIsValid(split)) {
             this.printUsage();
@@ -120,11 +140,11 @@ public class CommandProcessor {
 
         String pattern = split[1];
         debug("Sending a Read request with pattern: " + pattern);
-        clientService.read(pattern, stub);
+        clientService.read(pattern);
     }
 
 
-    private void take(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
+    private void take(String[] split){
          // check if input is valid
         if (!this.inputIsValid(split)) {
             this.printUsage();
@@ -133,10 +153,10 @@ public class CommandProcessor {
         
         String pattern = split[1];
         debug("Sending a Take request with pattern: " + pattern);
-        clientService.take(pattern, stub);
+        clientService.take(pattern);
     }
 
-    private void getTupleSpacesState(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub){
+    private void getTupleSpacesState(String[] split){
         // check if input is valid
         if (split.length != 2){
             this.printUsage();
@@ -147,10 +167,10 @@ public class CommandProcessor {
 
         // get the tuple spaces state
         debug("Getting TupleSpaceState with qualifier: " + qualifier);
-        clientService.getTupleSpacesState(qualifier, stub);
-    }
+        clientService.getTupleSpacesState(qualifier);
+    }*/
 
-    private void sleep(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
+    private void sleep(String[] split) {
       if (split.length != 2){
         this.printUsage();
         return;
@@ -172,26 +192,27 @@ public class CommandProcessor {
         throw new RuntimeException(e);
       }
     }
-
-    private void setdelay(String[] split, TupleSpacesGrpc.TupleSpacesBlockingStub stub) {
-      if (split.length != 3){
-        this.printUsage();
-        return;
+    private void setdelay(String[] split) {
+        if (split.length != 3){
+          this.printUsage();
+          return;
+        }
+        int qualifier = indexOfServerQualifier(split[1]);
+        if (qualifier == -1)
+          System.out.println("Invalid server qualifier");
+  
+        Integer time;
+  
+        // checks if input String can be parsed as an Integer
+        try {
+          time = Integer.parseInt(split[2]);
+        } catch (NumberFormatException e) {
+          this.printUsage();
+          return;
+        }
+        // register delay <time> for when calling server <qualifier>
+        this.clientService.setDelay(qualifier, time);
       }
-      String qualifier = split[1];
-      Integer time;
-
-      // checks if input String can be parsed as an Integer
-      try {
-        time = Integer.parseInt(split[2]);
-      } catch (NumberFormatException e) {
-        this.printUsage();
-        return;
-      }
-
-      // register delay <time> for when calling server <qualifier>
-      System.out.println("TODO: implement setdelay command (only needed in phases 2+3)");
-    }
 
     private void printUsage() {
         System.out.println("Usage:\n" +
@@ -202,6 +223,19 @@ public class CommandProcessor {
                 "- sleep <integer>\n" +
                 "- setdelay <server> <integer>\n" +
                 "- exit\n");
+    }
+
+    private int indexOfServerQualifier(String qualifier) {
+        switch (qualifier) {
+            case "A":
+                return 0;
+            case "B":
+                return 1;
+            case "C":
+                return 2;
+            default:
+                return -1;
+        }
     }
 
     private boolean inputIsValid(String[] input){

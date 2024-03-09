@@ -8,7 +8,6 @@ class ServerEntry():
 
     def checkQualifier(self, qualifier):
         if qualifier not in ['A', 'B', 'C']:
-            print("failed in checkQualifier")
             raise ValueError("Invalid qualifier")
     
     def __str__(self):

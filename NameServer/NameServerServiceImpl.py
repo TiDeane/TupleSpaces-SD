@@ -33,6 +33,14 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
             if (self.nameServer.checkServiceInMap(name)):
                 self.debug("Service is already in the NameServer, adding serverEntry")
                 serviceEntry = self.nameServer.getServiceEntry(name)
+
+                for server in serviceEntry.getServers():
+                    if server.qualifier == qualifier:
+                        self.debug("Operation failed: there is already a server with given name and qualifier")
+
+                        context.set_details("Not possible to register the server: there is already a server with given name and qualifier")
+                        context.set_code(pb2.StatusCode.INTERNAL)
+                        return pb2.RegisterResponse()
             else:
                 self.debug("Registered new Server:\n" + str(serverEntry))
                 serviceEntry = ServiceEntry(serviceName=name)
@@ -44,7 +52,8 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
         except Exception as e:
             self.debug("Failed to register new Server, with exception:\n" + str(e))
             
-            context.set_details("Not possible to register the server")
+            message = "Not possible to register the server, " + str(e)
+            context.set_details(message)
             context.set_code(pb2.StatusCode.INTERNAL)
             return pb2.RegisterResponse()
         

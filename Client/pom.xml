@@ -24,7 +24,7 @@
 		<server.host>localhost</server.host>
 		<server.port>5001</server.port>
 		<server.service>TupleSpace</server.service>
-		<server.qualifier>A</server.qualifier>
+		<server.qualifier>None</server.qualifier>
 
 	</properties>
 

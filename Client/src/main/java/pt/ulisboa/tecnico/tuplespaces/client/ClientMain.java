@@ -35,8 +35,14 @@ public class ClientMain {
         debug("Target: " + nameServerTarget);
 
         final String service = args[2];
-        final String qualifier = args[3];
-        debug("Service and Qualifier: " + service + " " + qualifier);
+        String qualifier = args[3];
+
+        if (qualifier.compareTo("A") == 0  || qualifier.compareTo("B") == 0 || qualifier.compareTo("C") == 0) {
+            debug("Service and Qualifier: " + service + " " + qualifier);
+        } else {
+            qualifier = "";
+            debug("Service: " + service + "\nQualifier: none");
+        }
 
         CommandProcessor parser = new CommandProcessor(new ClientService());
         parser.parseInput(nameServerTarget, service, qualifier, DEBUG_FLAG);
