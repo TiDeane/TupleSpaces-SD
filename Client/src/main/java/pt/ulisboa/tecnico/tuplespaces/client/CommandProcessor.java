@@ -38,7 +38,6 @@ public class CommandProcessor {
 
     public CommandProcessor(ClientService clientService) {
         this.clientService = clientService;
-        this.clientService.stubs = this.stubs;
     }
 
     /** Helper method to print debug messages. */
@@ -69,6 +68,8 @@ public class CommandProcessor {
             stubs[i] = clientService.buildStub(channels[i]);
             debug("Successfully connected to: " + servers.get(i));
         }
+
+        clientService.setStubs(stubs);
     
         try (Scanner scanner = new Scanner(System.in)) {
             boolean exit = false;

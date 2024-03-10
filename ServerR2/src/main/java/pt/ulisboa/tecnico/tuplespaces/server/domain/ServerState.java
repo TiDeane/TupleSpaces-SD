@@ -8,7 +8,6 @@ public class ServerState {
 
   public ServerState() {
     this.tuples = new ArrayList<String>();
-
   }
 
   public synchronized void put(String tuple) {

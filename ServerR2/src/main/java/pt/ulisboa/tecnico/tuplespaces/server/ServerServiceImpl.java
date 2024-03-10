@@ -3,14 +3,14 @@ package pt.ulisboa.tecnico.tuplespaces.server;
 import java.util.List;
 
 import io.grpc.stub.StreamObserver;
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized;
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesCentralized.*;
-import pt.ulisboa.tecnico.tuplespaces.centralized.contract.TupleSpacesGrpc.TupleSpacesImplBase;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov.*;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc.TupleSpacesReplicaImplBase;
 import pt.ulisboa.tecnico.tuplespaces.server.domain.ServerState;
 
 import static io.grpc.Status.INVALID_ARGUMENT;
 
-public class ServerServiceImpl extends TupleSpacesImplBase {
+public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
     private static final String BGN_TUPLE = "<";
     private static final String END_TUPLE = ">";
 
@@ -47,13 +47,13 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 		}
 
 		debug("Successfully put tuple, sending response");
-		TupleSpacesCentralized.PutResponse response = PutResponse.newBuilder().build();
+		TupleSpacesReplicaXuLiskov.PutResponse response = PutResponse.newBuilder().build();
 
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
 
-	@Override
+	/*@Override
 	public void take(TakeRequest request, StreamObserver<TakeResponse> responseObserver) {
 		String pattern = request.getSearchPattern();
 		String tuple;
@@ -91,7 +91,7 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
-	}
+	}*/
 
 	@Override
 	public void read(ReadRequest request, StreamObserver<ReadResponse> responseObserver) {
@@ -125,7 +125,7 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 		}
 
 		debug("Successfully read the tuple, sending response");
-		TupleSpacesCentralized.ReadResponse response = ReadResponse.newBuilder()
+		TupleSpacesReplicaXuLiskov.ReadResponse response = ReadResponse.newBuilder()
 			.setResult(tuple).build();
 
 		responseObserver.onNext(response);
@@ -133,13 +133,13 @@ public class ServerServiceImpl extends TupleSpacesImplBase {
 	}
 
 	@Override
-	public void getTupleSpacesState(GetTupleSpacesStateRequest request, StreamObserver<GetTupleSpacesStateResponse> responseObserver) {
+	public void getTupleSpacesState(getTupleSpacesStateRequest request, StreamObserver<getTupleSpacesStateResponse> responseObserver) {
 		List<String> tuples = serverState.getTupleSpacesState();
 
 		debug("--------------------");
 		debug("Received GetTupleSpacesState request, sending response");
 
-		TupleSpacesCentralized.GetTupleSpacesStateResponse response = TupleSpacesCentralized.GetTupleSpacesStateResponse.newBuilder()
+		TupleSpacesReplicaXuLiskov.getTupleSpacesStateResponse response = TupleSpacesReplicaXuLiskov.getTupleSpacesStateResponse.newBuilder()
 			.addAllTuple(tuples).build();
 
 		responseObserver.onNext(response);

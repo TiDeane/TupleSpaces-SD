@@ -27,6 +27,10 @@ public class ClientService {
   // This array is instantialized inside CommandProcesssor
   public TupleSpacesReplicaGrpc.TupleSpacesReplicaStub[] stubs;
 
+  public void setStubs(TupleSpacesReplicaGrpc.TupleSpacesReplicaStub[] stubs) {
+    this.stubs = stubs;
+  }
+
   public void createDelayer(int numServers) {
     /* The delayer can be used to inject delays to the sending of requests to the 
       different servers, according to the per-server delays that have been set  */
@@ -81,14 +85,22 @@ public class ClientService {
     delayer.setDelay(id, delay);
   }
 
-  public void put(String tupleb) {
+  public void put(String tuple) {
     TupleSpacesReplicaXuLiskov.PutRequest putRequest;
+    putRequest = TupleSpacesReplicaXuLiskov.PutRequest.newBuilder().setNewTuple(tuple).build();
 
-    // SEND TO ALL SERVERS (from stubs[])
-    /*
+    PutObserver putObserver = new PutObserver();
+
     try {
-      putRequest = TupleSpacesReplicaXuLiskov.PutRequest.newBuilder().setNewTuple(tuple).build();
-      stub.put(putRequest, new PutObserver());
+      for (int i = 0; i < numServers; i++) {
+        stubs[i].put(putRequest, putObserver);
+      }
+
+      try {
+        putObserver.waitUntilAllReceived(numServers);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
 
       System.out.println("OK");
       System.out.print("\n");
@@ -97,7 +109,6 @@ public class ClientService {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
     }
-    */
   }
 
   /*public void take(String pattern, TupleSpacesGrpc.TupleSpacesStub stub) {
