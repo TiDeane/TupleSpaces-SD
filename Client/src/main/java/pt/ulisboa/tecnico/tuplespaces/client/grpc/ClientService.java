@@ -11,6 +11,7 @@ import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplic
 import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
 import pt.ulisboa.tecnico.tuplespaces.client.PutObserver;
+import pt.ulisboa.tecnico.tuplespaces.client.ReadObserver;
 import pt.ulisboa.tecnico.tuplespaces.client.util.OrderedDelayer;
 
 
@@ -111,16 +112,24 @@ public class ClientService {
     }
   }
 
-  /*public void take(String pattern, TupleSpacesGrpc.TupleSpacesStub stub) {
-    TupleSpacesCentralized.TakeRequest takeRequest;
-    TupleSpacesCentralized.TakeResponse takeResponse;
-    String result;
+  public void read(String tuple) {
+    TupleSpacesReplicaXuLiskov.ReadRequest readRequest;
+    readRequest = TupleSpacesReplicaXuLiskov.ReadRequest.newBuilder().setSearchPattern(tuple).build();
+    String result = "";
+
+    ReadObserver readObserver = new ReadObserver();
 
     try {
-      takeRequest = TupleSpacesCentralized.TakeRequest.newBuilder().setSearchPattern(pattern).build();
-      takeResponse = stub.take(takeRequest);
-      result = takeResponse.getResult();
-      
+      for (int i = 0; i < numServers; i++) {
+        stubs[i].read(readRequest, readObserver);
+      }
+
+      try {
+        result = readObserver.waitUntilReceivesResponse();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+
       if (isTupleValid(result)) {
         System.out.println("OK");
         System.out.println(result);
@@ -136,16 +145,16 @@ public class ClientService {
     }
   }
 
-  public void read(String pattern, TupleSpacesGrpc.TupleSpacesStub stub) {
-    TupleSpacesCentralized.ReadRequest readRequest;
-    TupleSpacesCentralized.ReadResponse readResponse;
+  /*public void take(String pattern, TupleSpacesGrpc.TupleSpacesStub stub) {
+    TupleSpacesCentralized.TakeRequest takeRequest;
+    TupleSpacesCentralized.TakeResponse takeResponse;
     String result;
 
     try {
-      readRequest = TupleSpacesCentralized.ReadRequest.newBuilder().setSearchPattern(pattern).build();
-      readResponse = stub.read(readRequest);
-      result = readResponse.getResult();
-
+      takeRequest = TupleSpacesCentralized.TakeRequest.newBuilder().setSearchPattern(pattern).build();
+      takeResponse = stub.take(takeRequest);
+      result = takeResponse.getResult();
+      
       if (isTupleValid(result)) {
         System.out.println("OK");
         System.out.println(result);

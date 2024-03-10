@@ -84,7 +84,7 @@ public class CommandProcessor {
                         break;
 
                     case READ:
-                        //this.read(split);
+                        this.read(split);
                         break;
 
                     case TAKE:
@@ -119,7 +119,6 @@ public class CommandProcessor {
     }
 
     private void put(String[] split){
-
         // check if input is valid
         if (!this.inputIsValid(split)) {
             this.printUsage();
@@ -132,7 +131,7 @@ public class CommandProcessor {
         clientService.put(tuple);
     }
 
-    /*private void read(String[] split){
+    private void read(String[] split){
         // check if input is valid
         if (!this.inputIsValid(split)) {
             this.printUsage();
@@ -144,7 +143,7 @@ public class CommandProcessor {
         clientService.read(pattern);
     }
 
-
+    /*
     private void take(String[] split){
          // check if input is valid
         if (!this.inputIsValid(split)) {
