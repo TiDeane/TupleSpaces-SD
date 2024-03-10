@@ -3,8 +3,6 @@ package pt.ulisboa.tecnico.tuplespaces.client;
 import pt.ulisboa.tecnico.tuplespaces.client.grpc.ClientService;
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov;
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc;
-//import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.PutRequest;
-//import pt.ulisboa.tecnico.tuplespaces.*;
 
 import io.grpc.ManagedChannel;
 import java.util.Scanner;
@@ -88,7 +86,7 @@ public class CommandProcessor {
                         break;
 
                     case TAKE:
-                        //this.take(split);
+                        this.take(split);
                         break;
 
                     case GET_TUPLE_SPACES_STATE:
@@ -127,7 +125,7 @@ public class CommandProcessor {
         
         // get the tuple
         String tuple = split[1];
-        debug("Sending a Put request with tuple: " + tuple);
+        debug("Sending a Put request to all servers with tuple: " + tuple);
         clientService.put(tuple);
     }
 
@@ -143,32 +141,31 @@ public class CommandProcessor {
         clientService.read(pattern);
     }
 
-    /*
     private void take(String[] split){
-         // check if input is valid
-        if (!this.inputIsValid(split)) {
-            this.printUsage();
-            return;
-        }
-        
-        String pattern = split[1];
-        debug("Sending a Take request with pattern: " + pattern);
-        clientService.take(pattern);
-    }
-
-    private void getTupleSpacesState(String[] split){
         // check if input is valid
-        if (split.length != 2){
-            this.printUsage();
-            return;
-        }
+       if (!this.inputIsValid(split)) {
+           this.printUsage();
+           return;
+       }
+       
+       String pattern = split[1];
+       debug("Sending a Take request to all servers with pattern: " + pattern);
+       clientService.take(pattern);
+   }
 
-        String qualifier = split[1];
+   private void getTupleSpacesState(String[] split){
+       // check if input is valid
+       if (split.length != 2){
+           this.printUsage();
+           return;
+       }
 
-        // get the tuple spaces state
-        debug("Getting TupleSpaceState with qualifier: " + qualifier);
-        clientService.getTupleSpacesState(qualifier);
-    }*/
+       String qualifier = split[1];
+
+       // get the tuple spaces state
+       debug("Getting TupleSpaceState with qualifier: " + qualifier);
+       clientService.getTupleSpacesState(qualifier);
+   }
 
     private void sleep(String[] split) {
       if (split.length != 2){
@@ -192,6 +189,7 @@ public class CommandProcessor {
         throw new RuntimeException(e);
       }
     }
+
     private void setdelay(String[] split) {
         if (split.length != 3){
           this.printUsage();
@@ -212,7 +210,7 @@ public class CommandProcessor {
         }
         // register delay <time> for when calling server <qualifier>
         this.clientService.setDelay(qualifier, time);
-      }
+    }
 
     private void printUsage() {
         System.out.println("Usage:\n" +

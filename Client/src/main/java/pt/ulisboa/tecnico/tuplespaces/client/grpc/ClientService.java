@@ -2,16 +2,21 @@ package pt.ulisboa.tecnico.tuplespaces.client.grpc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov.*;
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc.*;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc;
+import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc.*;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
-import pt.ulisboa.tecnico.tuplespaces.client.PutObserver;
-import pt.ulisboa.tecnico.tuplespaces.client.ReadObserver;
+import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass.*;
+
+import pt.ulisboa.tecnico.tuplespaces.client.*;
 import pt.ulisboa.tecnico.tuplespaces.client.util.OrderedDelayer;
 
 
@@ -24,11 +29,18 @@ public class ClientService {
 
   private int numServers;
   private OrderedDelayer delayer;
+  private int clientId;
 
   // This array is instantialized inside CommandProcesssor
-  public TupleSpacesReplicaGrpc.TupleSpacesReplicaStub[] stubs;
+  public TupleSpacesReplicaStub[] stubs;
 
-  public void setStubs(TupleSpacesReplicaGrpc.TupleSpacesReplicaStub[] stubs) {
+  public ClientService() {
+    // Initializes this client's ID with a seed based on the current time
+    Random random = new Random(System.currentTimeMillis());
+    clientId = random.nextInt(Integer.MAX_VALUE);
+  }
+
+  public void setStubs(TupleSpacesReplicaStub[] stubs) {
     this.stubs = stubs;
   }
 
@@ -50,15 +62,15 @@ public class ClientService {
     List<String> addressList;
     
     final ManagedChannel nameServerChannel = this.buildChannel(nameServerTarget);
-    NameServerGrpc.NameServerBlockingStub nameServerStub;
+    NameServerBlockingStub nameServerStub;
     nameServerStub = NameServerGrpc.newBlockingStub(nameServerChannel);
 
     try {
-      NameServerOuterClass.LookupRequest lookupRequest;
+      LookupRequest lookupRequest;
       lookupRequest = NameServerOuterClass.LookupRequest.newBuilder().
                       setName(service).setQualifier(qualifier).build();
                       
-      NameServerOuterClass.LookupResponse lookupResponse;
+      LookupResponse lookupResponse;
       lookupResponse = nameServerStub.lookup(lookupRequest);
 
       addressList = lookupResponse.getServersList();
@@ -87,7 +99,7 @@ public class ClientService {
   }
 
   public void put(String tuple) {
-    TupleSpacesReplicaXuLiskov.PutRequest putRequest;
+    PutRequest putRequest;
     putRequest = TupleSpacesReplicaXuLiskov.PutRequest.newBuilder().setNewTuple(tuple).build();
 
     PutObserver putObserver = new PutObserver();
@@ -124,11 +136,7 @@ public class ClientService {
         stubs[i].read(readRequest, readObserver);
       }
 
-      try {
-        result = readObserver.waitUntilReceivesResponse();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
+      result = readObserver.waitUntilReceivesResponse();
 
       if (isTupleValid(result)) {
         System.out.println("OK");
@@ -141,21 +149,47 @@ public class ClientService {
       }
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
-        e.getStatus().getDescription());
+                          e.getStatus().getDescription());
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 
-  /*public void take(String pattern, TupleSpacesGrpc.TupleSpacesStub stub) {
-    TupleSpacesCentralized.TakeRequest takeRequest;
-    TupleSpacesCentralized.TakeResponse takeResponse;
-    String result;
+  public void take(String pattern) {
+    TakePhase1Request takePhase1Request;
+    TakePhase1ReleaseRequest takePhase1ReleaseRequest;
+    TakePhase2Request takePhase2Request;
+    String tupleToRemove;
+
+    TakePhase1Observer takePhase1Observer = new TakePhase1Observer();
+    TakePhase1ReleaseObserver takePhase1ReleaseObserver = new TakePhase1ReleaseObserver();
+    //TakePhase2Observer takePhase2Observer = new TakePhase2Observer();
 
     try {
-      takeRequest = TupleSpacesCentralized.TakeRequest.newBuilder().setSearchPattern(pattern).build();
-      takeResponse = stub.take(takeRequest);
-      result = takeResponse.getResult();
+      takePhase1Request = TakePhase1Request.newBuilder().setSearchPattern(pattern).
+                                            setClientId(this.clientId).build();
+
+      for (int i = 0; i < numServers; i++) {
+        stubs[i].takePhase1(takePhase1Request, takePhase1Observer);
+      }
+
+      takePhase1Observer.waitUntilAllReceived(numServers);
+
+      tupleToRemove = takePhase1Observer.getRandomTuple();
+
+      // THIS IS JUST FOR DEBUG
+      System.out.println("OK: Phase 1 successful");
+      System.out.println("Tuple to remove: " + tupleToRemove);
+
+      takePhase1ReleaseRequest = TakePhase1ReleaseRequest.newBuilder().setClientId(this.clientId).build();
+
+      for (int i = 0; i < numServers; i++) {
+        stubs[i].takePhase1Release(takePhase1ReleaseRequest, takePhase1ReleaseObserver);
+      }
+
+      takePhase1ReleaseObserver.waitUntilAllReceived(numServers);
       
-      if (isTupleValid(result)) {
+      /*if (isTupleValid(result)) {
         System.out.println("OK");
         System.out.println(result);
         System.out.print("\n");
@@ -163,55 +197,50 @@ public class ClientService {
       else {
         System.out.printf("Tuple must have the format <element[,more_elements]>" + 
           " but received: %s\n", result);
-      }
+      }*/
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
-        e.getStatus().getDescription());
+                         e.getStatus().getDescription());
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
 
-  public void getTupleSpacesState(String qualifier, TupleSpacesGrpc.TupleSpacesStub stub) {
-    TupleSpacesCentralized.GetTupleSpacesStateRequest getTupleSpacesStateRequest;
-    TupleSpacesCentralized.GetTupleSpacesStateResponse getTupleSpacesStateResponse;
+  public void getTupleSpacesState(String qualifier) {
+    getTupleSpacesStateRequest getTupleSpacesStateRequest;
+    getTupleSpacesStateResponse getTupleSpacesStateResponse;
     List<String> tupleSpace;
 
-    try {
-      getTupleSpacesStateRequest = TupleSpacesCentralized.GetTupleSpacesStateRequest.getDefaultInstance();
-      getTupleSpacesStateResponse = stub.getTupleSpacesState(getTupleSpacesStateRequest);
-      tupleSpace = getTupleSpacesStateResponse.getTupleList();
-
-      // verify arguments given by server 
-      for (String tuple : tupleSpace) {
-        if (isTupleValid(tuple)) {
-          continue;
-        }
-        else {
-          System.out.printf("Tuple must have the format <element[,more_elements]>" + 
-            " but one of the tuples are: %s\n", tuple);
-          return;
-        }
-      }
+    /*try {
+      getTupleSpacesStateRequest = TupleSpacesReplicaXuLiskov.getTupleSpacesStateRequest.getDefaultInstance();
 
       System.out.println("OK");
-      System.out.println(tupleSpace);
+
+      for (int i = 0; i < numServers; i++) {
+        getTupleSpacesStateResponse = stubs[i].getTupleSpacesState(getTupleSpacesStateRequest);
+        tupleSpace = getTupleSpacesStateResponse.getTupleList();
+
+        System.out.println(tupleSpace);
+      }
+
       System.out.print("\n");
 
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
-    }
-  }*/
+    }*/
+  }
 
-  	private boolean isTupleValid(String tuple){
-        if (tuple.length() < 2 
-            ||
-            !tuple.substring(0,1).equals(BGN_TUPLE) 
-            || 
-            !tuple.endsWith(END_TUPLE)) {
-            return false;
-        }
-        else {
-            return true;
-        }
-    }
+  private boolean isTupleValid(String tuple){
+      if (tuple.length() < 2 
+          ||
+          !tuple.substring(0,1).equals(BGN_TUPLE) 
+          || 
+          !tuple.endsWith(END_TUPLE)) {
+          return false;
+      }
+      else {
+          return true;
+      }
+  }
 }
