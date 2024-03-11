@@ -90,7 +90,7 @@ public class CommandProcessor {
                         break;
 
                     case GET_TUPLE_SPACES_STATE:
-                        //this.getTupleSpacesState(split);
+                        this.getTupleSpacesState(split);
                         break;
 
                     case SLEEP:
@@ -161,10 +161,11 @@ public class CommandProcessor {
        }
 
        String qualifier = split[1];
+       int qualifierIndex = indexOfServerQualifier(split[1]);
 
        // get the tuple spaces state
-       debug("Getting TupleSpaceState with qualifier: " + qualifier);
-       clientService.getTupleSpacesState(qualifier);
+       debug("Getting TupleSpaceState for server with qualifier: " + qualifier);
+       clientService.getTupleSpacesState(qualifierIndex);
    }
 
     private void sleep(String[] split) {

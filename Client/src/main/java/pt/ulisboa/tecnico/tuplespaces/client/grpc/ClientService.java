@@ -7,10 +7,12 @@ import java.util.Random;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov;
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov.*;
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc;
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc.*;
+
 import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc.*;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
@@ -206,29 +208,27 @@ public class ClientService {
     }
   }
 
-  public void getTupleSpacesState(String qualifier) {
+  public void getTupleSpacesState(int id) {
     getTupleSpacesStateRequest getTupleSpacesStateRequest;
-    getTupleSpacesStateResponse getTupleSpacesStateResponse;
-    List<String> tupleSpace;
 
-    /*try {
+    GetTupleSpacesStateObserver observer = new GetTupleSpacesStateObserver();
+
+    try {
       getTupleSpacesStateRequest = TupleSpacesReplicaXuLiskov.getTupleSpacesStateRequest.getDefaultInstance();
 
       System.out.println("OK");
 
-      for (int i = 0; i < numServers; i++) {
-        getTupleSpacesStateResponse = stubs[i].getTupleSpacesState(getTupleSpacesStateRequest);
-        tupleSpace = getTupleSpacesStateResponse.getTupleList();
+      stubs[id].getTupleSpacesState(getTupleSpacesStateRequest, observer);
 
-        System.out.println(tupleSpace);
-      }
-
+      observer.printTupleSpace();
       System.out.print("\n");
 
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
-    }*/
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
   private boolean isTupleValid(String tuple){

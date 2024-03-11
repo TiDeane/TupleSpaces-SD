@@ -32,19 +32,6 @@ public class PutObserver implements StreamObserver<PutResponse> {
         notifyAll();
     }
 
-    /*synchronized public void addString(String s) {
-        strings.add(s);
-        notifyAll();
-    }*/
-
-    /*synchronized public String getStrings() {
-        String res = new String();
-        for (String s : strings) {
-            res = res.concat(s);
-        }
-        return res;
-    }*/
-
     synchronized public void waitUntilAllReceived(int n) throws InterruptedException {
         while (nResponses < n) 
             wait();
