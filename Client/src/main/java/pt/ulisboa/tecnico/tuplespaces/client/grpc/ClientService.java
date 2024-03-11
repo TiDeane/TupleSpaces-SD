@@ -107,8 +107,8 @@ public class ClientService {
     PutObserver putObserver = new PutObserver();
 
     try {
-      for (int i = 0; i < numServers; i++) {
-        stubs[i].put(putRequest, putObserver);
+      for (Integer id : delayer) {
+        stubs[id].put(putRequest, putObserver);
       }
 
       try {
@@ -134,6 +134,8 @@ public class ClientService {
     ReadObserver readObserver = new ReadObserver();
 
     try {
+      //TODO: The delayer blocks the client until all delays
+      //have finished, so it doesn't work for the read command
       for (int i = 0; i < numServers; i++) {
         stubs[i].read(readRequest, readObserver);
       }
@@ -171,8 +173,8 @@ public class ClientService {
       takePhase1Request = TakePhase1Request.newBuilder().setSearchPattern(pattern).
                                             setClientId(this.clientId).build();
 
-      for (int i = 0; i < numServers; i++) {
-        stubs[i].takePhase1(takePhase1Request, takePhase1Observer);
+      for (Integer id : delayer) {
+        stubs[id].takePhase1(takePhase1Request, takePhase1Observer);
       }
 
       takePhase1Observer.waitUntilAllReceived(numServers);
@@ -183,10 +185,11 @@ public class ClientService {
       System.out.println("OK: Phase 1 successful");
       System.out.println("Tuple to remove: " + tupleToRemove + "\n");
 
+      // THIS IS INCORRECT. Phase1Release is only used in case something goes wrong
       takePhase1ReleaseRequest = TakePhase1ReleaseRequest.newBuilder().setClientId(this.clientId).build();
 
-      for (int i = 0; i < numServers; i++) {
-        stubs[i].takePhase1Release(takePhase1ReleaseRequest, takePhase1ReleaseObserver);
+      for (Integer id : delayer) {
+        stubs[id].takePhase1Release(takePhase1ReleaseRequest, takePhase1ReleaseObserver);
       }
 
       takePhase1ReleaseObserver.waitUntilAllReceived(numServers);
