@@ -40,11 +40,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
         notifyAll();
     }
 
-    /*synchronized public void addString(String s) {
-        strings.add(s);
-        notifyAll();
-    }*/
-
     synchronized public String getRandomTuple() {
         Random random = new Random();
 
@@ -58,10 +53,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
     }
 
     synchronized public void waitUntilAllReceived(int n) throws InterruptedException {
-        /*
-         * Maybe make it wait a certain amount of time, and then repeat all requests
-         * if not all responses have returned? Do this on "put" aswell?
-         */
         while (nResponses < n) 
             wait();
     }

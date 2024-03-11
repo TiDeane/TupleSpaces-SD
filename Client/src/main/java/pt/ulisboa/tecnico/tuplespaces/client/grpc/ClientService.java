@@ -179,7 +179,7 @@ public class ClientService {
 
       // THIS IS JUST FOR DEBUG
       System.out.println("OK: Phase 1 successful");
-      System.out.println("Tuple to remove: " + tupleToRemove);
+      System.out.println("Tuple to remove: " + tupleToRemove + "\n");
 
       takePhase1ReleaseRequest = TakePhase1ReleaseRequest.newBuilder().setClientId(this.clientId).build();
 
