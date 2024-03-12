@@ -1,22 +1,17 @@
 package pt.ulisboa.tecnico.tuplespaces.client;
 
 import io.grpc.stub.StreamObserver;
+import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov.TakePhase2Response;
 
-import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov.TakePhase1ReleaseResponse;
-
-import java.util.List;
-
-public class TakePhase1ReleaseObserver implements StreamObserver<TakePhase1ReleaseResponse> {
-
+public class TakePhase2Observer implements StreamObserver<TakePhase2Response> {
     int nResponses;
-    List<List<String>> receivedTupleLists;
 
-    public TakePhase1ReleaseObserver() {
+    public TakePhase2Observer() {
         nResponses = 0;
     }
-
+    
     @Override
-    synchronized public void onNext(TakePhase1ReleaseResponse r) {
+    synchronized public void onNext(TakePhase2Response r) {
         incrementCount(r);
         //System.out.println("Received response: " + r);
     }
@@ -31,7 +26,7 @@ public class TakePhase1ReleaseObserver implements StreamObserver<TakePhase1Relea
         //System.out.println("Request completed");
     }
 
-    synchronized public void incrementCount(TakePhase1ReleaseResponse r) {
+    synchronized public void incrementCount(TakePhase2Response r) {
         nResponses += 1;
         notifyAll();
     }

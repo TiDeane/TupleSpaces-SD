@@ -11,22 +11,25 @@ import java.util.Random;
 public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
 
     int nResponses;
+    boolean operationFailed;
     List<List<String>> receivedTupleLists;
 
     public TakePhase1Observer() {
         nResponses = 0;
+        operationFailed = false;
         receivedTupleLists = new ArrayList<List<String>>();
     }
 
     @Override
     synchronized public void onNext(TakePhase1Response r) {
-        incrementCount(r);
+        receivedTupleLists.add(r.getReservedTuplesList());
+        incrementCount();
         //System.out.println("Received response: " + r);
     }
 
     @Override
     synchronized public void onError(Throwable throwable) {
-        //System.out.println("Received error: " + throwable);
+        operationFailed = true;
     }
 
     @Override
@@ -34,26 +37,50 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
         //System.out.println("Request completed");
     }
 
-    synchronized public void incrementCount(TakePhase1Response r) {
+    synchronized public void incrementCount() {
         nResponses += 1;
-        receivedTupleLists.add(r.getReservedTuplesList());
         notifyAll();
     }
 
     synchronized public String getRandomTuple() {
         Random random = new Random();
 
-        // Gets a random index
-        int serverIndex = random.nextInt(nResponses);
+        List<String> intersection = getIntersectionOfTupleLists();
 
-        // Chooses a random tuple from that index's server
-        int tupleIndex = random.nextInt(receivedTupleLists.get(serverIndex).size());
+        if (intersection.isEmpty()) {
+            return "";
+        }
 
-        return receivedTupleLists.get(serverIndex).get(tupleIndex);
+        int tupleIndex = random.nextInt(intersection.size());
+
+        return intersection.get(tupleIndex);
+    }
+
+    synchronized public List<String> getIntersectionOfTupleLists() {
+        // NOTE: REMOVER SOP
+        System.out.println(receivedTupleLists);
+
+        if (receivedTupleLists.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        ArrayList<String> intersection = new ArrayList<String>(receivedTupleLists.get(0));
+
+        for (int i = 1; i < nResponses; i++) {
+            intersection.retainAll(receivedTupleLists.get(i));
+        }
+
+        // NOTE: REMOVER SOP
+        System.out.println(intersection);
+        return intersection;
     }
 
     synchronized public void waitUntilAllReceived(int n) throws InterruptedException {
         while (nResponses < n) 
             wait();
+    }
+
+    public boolean operationFailed() {
+        return operationFailed;
     }
 }

@@ -153,6 +153,29 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 	}
 
 	@Override
+	public void takePhase2(TakePhase2Request request, StreamObserver<TakePhase2Response> responseObserver) {
+		int clientId = request.getClientId();
+		String tuple = request.getTuple();
+
+		debug("--------------------");
+		debug("Inside TakePhase2 for client: " + clientId);
+
+		synchronized (serverState) {
+			serverState.take(tuple);
+
+			debug("removed the tuple: " + tuple);
+
+			serverState.unlockClientTuples(clientId);
+		}
+
+		debug("Inside TakePhase2 released all locks: ");
+
+		responseObserver.onNext(TakePhase2Response.newBuilder().build());
+		responseObserver.onCompleted();
+	}
+
+
+	@Override
 	public void getTupleSpacesState(getTupleSpacesStateRequest request, StreamObserver<getTupleSpacesStateResponse> responseObserver) {
 		List<String> tuples = serverState.getTupleSpacesState();
 

@@ -35,6 +35,8 @@ public class ClientService {
   private OrderedDelayer delayer;
   private int clientId;
 
+  private boolean debugFlag;
+
   // This array is instantialized inside CommandProcesssor
   public TupleSpacesReplicaStub[] stubs;
 
@@ -43,6 +45,11 @@ public class ClientService {
     Random random = new Random(System.currentTimeMillis());
     clientId = random.nextInt(Integer.MAX_VALUE);
   }
+
+  private void debug(String debugMessage) {
+		if (debugFlag)
+			System.err.println(debugMessage);
+	}
 
   public void setStubs(TupleSpacesReplicaStub[] stubs) {
     this.stubs = stubs;
@@ -62,7 +69,7 @@ public class ClientService {
     return TupleSpacesReplicaGrpc.newStub(channel);
   }
 
-  public List<String> getServers(String nameServerTarget, String service, String qualifier) {
+  public List<String> getServers(String nameServerTarget, String service, String qualifier, boolean dFlag) {
     List<String> addressList;
     
     final ManagedChannel nameServerChannel = this.buildChannel(nameServerTarget);
@@ -84,6 +91,8 @@ public class ClientService {
       // Now that the Lookup operation is complete, creates the delayer object
       numServers = addressList.size();
       createDelayer(numServers);
+
+      debugFlag = dFlag;
       
       return addressList;
 
@@ -111,6 +120,7 @@ public class ClientService {
     try {
       for (Integer id : delayer) {
         stubs[id].put(putRequest, putObserver);
+        debug("Sent put request to server with id: " + id);
       }
 
       try {
@@ -136,10 +146,10 @@ public class ClientService {
     ReadObserver readObserver = new ReadObserver();
 
     try {
-      //TODO: The delayer blocks the client until all delays
       //have finished, so it doesn't work for the read command
-      for (int i = 0; i < numServers; i++) {
-        stubs[i].read(readRequest, readObserver);
+      for (Integer id : delayer) {
+        stubs[id].read(readRequest, readObserver);
+        debug("Sent read request to server with id: " + id);
       }
 
       result = readObserver.waitUntilReceivesResponse();
@@ -165,42 +175,48 @@ public class ClientService {
     TakePhase1Request takePhase1Request;
     TakePhase1ReleaseRequest takePhase1ReleaseRequest;
     TakePhase2Request takePhase2Request;
-    String tupleToRemove;
 
     TakePhase1Observer takePhase1Observer = new TakePhase1Observer();
     TakePhase1ReleaseObserver takePhase1ReleaseObserver = new TakePhase1ReleaseObserver();
-    //TakePhase2Observer takePhase2Observer = new TakePhase2Observer();
+    TakePhase2Observer takePhase2Observer = new TakePhase2Observer();
+
+    String tupleToRemove;
 
     try {
+      /* phase 1 */
       takePhase1Request = TakePhase1Request.newBuilder().setSearchPattern(pattern).
                                             setClientId(this.clientId).build();
-
       for (Integer id : delayer) {
         stubs[id].takePhase1(takePhase1Request, takePhase1Observer);
       }
-
       takePhase1Observer.waitUntilAllReceived(numServers);
-
       tupleToRemove = takePhase1Observer.getRandomTuple();
+      debug("Phase 1 successful\n" + "Tuple to remove: " + tupleToRemove);
 
-      // THIS IS JUST FOR DEBUG
-      System.out.println("OK: Phase 1 successful");
-      System.out.println("Tuple to remove: " + tupleToRemove + "\n");
-
-      // THIS IS INCORRECT. Phase1Release is only used in case something goes wrong
-      takePhase1ReleaseRequest = TakePhase1ReleaseRequest.newBuilder().setClientId(this.clientId).build();
-
-      for (Integer id : delayer) {
-        stubs[id].takePhase1Release(takePhase1ReleaseRequest, takePhase1ReleaseObserver);
+      /* phase 1 relase */
+      if (tupleToRemove.isEmpty() || takePhase1Observer.operationFailed()) {
+        takePhase1ReleaseRequest = TakePhase1ReleaseRequest.newBuilder().setClientId(this.clientId).build();
+        for (Integer id : delayer) {
+          stubs[id].takePhase1Release(takePhase1ReleaseRequest, takePhase1ReleaseObserver);
+        }    
+        takePhase1ReleaseObserver.waitUntilAllReceived(numServers); 
+        debug("Phase 1 relase successful");
+        return;
       }
-
-      takePhase1ReleaseObserver.waitUntilAllReceived(numServers);
       
-      /*if (isTupleValid(result)) {
-        System.out.println("OK");
-        System.out.println(result);
-        System.out.print("\n");
+      /* phase 2 */
+      takePhase2Request = TakePhase2Request.newBuilder().setTuple(tupleToRemove).
+                                            setClientId(this.clientId).build();
+      for (Integer id : delayer) {
+        stubs[id].takePhase2(takePhase2Request, takePhase2Observer);
       }
+      takePhase2Observer.waitUntilAllReceived(numServers);
+      debug("Phase 2 successful\n");
+
+      System.out.println("OK");
+      System.out.println(tupleToRemove);
+      System.out.print("\n");
+      /* 
       else {
         System.out.printf("Tuple must have the format <element[,more_elements]>" + 
           " but received: %s\n", result);

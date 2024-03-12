@@ -49,7 +49,7 @@ public class CommandProcessor {
         debugFlag = dFlag;
 
         List<String> servers;
-        servers = clientService.getServers(nameServerTarget, service, qualifier);
+        servers = clientService.getServers(nameServerTarget, service, qualifier, dFlag);
         numServers = servers.size();
 
         if (servers.size() < 3) {

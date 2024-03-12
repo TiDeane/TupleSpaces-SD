@@ -50,7 +50,11 @@ public class ServerState {
   }
 
   public synchronized String read(String pattern) {
-    return getMatchingTuple(pattern).getTuple();
+    TupleSpaceObj tupleObj = getMatchingTuple(pattern);
+    if (tupleObj == null) {
+      return null;
+    }
+    return tupleObj.getTuple();
   }
 
   public synchronized String take(String pattern) {
