@@ -11,8 +11,8 @@ public class ReadObserver implements StreamObserver<ReadResponse> {
 
     @Override
     synchronized public void onNext(ReadResponse r) {
+        response = r.getResult(); 
         notifyAll();
-        response = r.getResult();
     }
 
     @Override

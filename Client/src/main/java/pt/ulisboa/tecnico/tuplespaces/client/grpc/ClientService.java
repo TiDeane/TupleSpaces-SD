@@ -1,8 +1,10 @@
 package pt.ulisboa.tecnico.tuplespaces.client.grpc;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -233,7 +235,7 @@ public class ClientService {
       e.printStackTrace();
     }
   }
-
+  
   private boolean isTupleValid(String tuple){
       if (tuple.length() < 2 
           ||
@@ -245,5 +247,24 @@ public class ClientService {
       else {
           return true;
       }
+  }
+
+  public static List<String> intersectionOfTuples(List<List<String>> tuplesEachServer) {
+    // just making sure there is no problem     
+    if (tuplesEachServer == null || tuplesEachServer.isEmpty()) {
+        return new ArrayList<String>();
+    }
+
+    // Create a set to store common tuples
+    Set<String> commonTuples = new HashSet<>(tuplesEachServer.get(0));
+
+    // Iterate through the list of tuples of each server
+    for (int i = 1; i < tuplesEachServer.size(); i++) {
+        Set<String> tplesOneServer = new HashSet<>(tuplesEachServer.get(i));
+        commonTuples.retainAll(tplesOneServer); // Retain only common tuples with the current set
+    }
+
+    // Convert set to list and return
+    return new ArrayList<String>(commonTuples);
   }
 }
