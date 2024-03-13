@@ -1,4 +1,4 @@
-package pt.ulisboa.tecnico.tuplespaces.client;
+package pt.ulisboa.tecnico.tuplespaces.client.observers;
 
 import io.grpc.stub.StreamObserver;
 
@@ -18,17 +18,14 @@ public class TakePhase1ReleaseObserver implements StreamObserver<TakePhase1Relea
     @Override
     synchronized public void onNext(TakePhase1ReleaseResponse r) {
         incrementCount(r);
-        //System.out.println("Received response: " + r);
     }
 
     @Override
     synchronized public void onError(Throwable throwable) {
-        //System.out.println("Received error: " + throwable);
     }
 
     @Override
     synchronized public void onCompleted() {
-        //System.out.println("Request completed");
     }
 
     synchronized public void incrementCount(TakePhase1ReleaseResponse r) {

@@ -1,4 +1,4 @@
-package pt.ulisboa.tecnico.tuplespaces.client;
+package pt.ulisboa.tecnico.tuplespaces.client.observers;
 
 import io.grpc.stub.StreamObserver;
 import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov.PutResponse;
@@ -14,17 +14,14 @@ public class PutObserver implements StreamObserver<PutResponse> {
     @Override
     synchronized public void onNext(PutResponse r) {
         incrementCount();
-        //System.out.println("Received response: " + r);
     }
 
     @Override
     synchronized public void onError(Throwable throwable) {
-        //System.out.println("Received error: " + throwable);
     }
 
     @Override
     synchronized public void onCompleted() {
-        //System.out.println("Request completed");
     }
 
     synchronized public void incrementCount() {

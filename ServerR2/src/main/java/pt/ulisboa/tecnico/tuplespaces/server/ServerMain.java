@@ -18,6 +18,8 @@ public class ServerMain {
 	 * The flag can be set using the -Ddebug command line option. */
 	private static final boolean DEBUG_FLAG = (System.getProperty("debug") != null);
 
+	private static final int NAME_SERVER_PORT = 5001;
+
 	/** Helper method to print debug messages. */
 	private static void debug(String debugMessage) {
 		if (DEBUG_FLAG)
@@ -26,13 +28,11 @@ public class ServerMain {
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
-		// receive and print arguments
 		debug(String.format("Received %d arguments", args.length));
 		for (int i = 0; i < args.length; i++) {
 			debug(String.format("arg[%d] = %s", i, args[i]));
 		}
 
-		// check arguments
 		if (args.length != 2) {
 			System.err.println("Argument(s) missing!");
 			System.err.printf("Usage: mvn exec:java -Dexec.args=\"<port> <qualifier>\"");
@@ -42,16 +42,14 @@ public class ServerMain {
 		final String host = "localhost";
 		final int port = Integer.parseInt(args[0]);
 		final String qualifier = args[1];
-		final int nameServerPort = 5001;
+		final int nameServerPort = NAME_SERVER_PORT;
 		final BindableService impl = new ServerServiceImpl(DEBUG_FLAG);
 
-		// Create a new server to listen on port
 		Server server = ServerBuilder.forPort(port).addService(impl).build();
 
 		final String localAddress = host + ":" + port;
 		final String target = host + ":" + nameServerPort;
 
-		// Building channel to NameServer
 		debug("Connecting to NameServer...");
 		final ManagedChannel channel = ManagedChannelBuilder.forTarget(target).usePlaintext().build();
 		NameServerGrpc.NameServerBlockingStub stub = NameServerGrpc.newBlockingStub(channel);

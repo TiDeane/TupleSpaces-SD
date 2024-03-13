@@ -137,7 +137,7 @@ public class CommandProcessor {
         }
 
         String pattern = split[1];
-        debug("Sending a Read request with pattern: " + pattern);
+        debug("Sending a Read request to all servers with pattern: " + pattern);
         clientService.read(pattern);
     }
 
@@ -162,6 +162,11 @@ public class CommandProcessor {
 
        String qualifier = split[1];
        int qualifierIndex = indexOfServerQualifier(split[1]);
+
+       if (qualifierIndex == -1) {
+          System.out.println("Invalid server qualifier");
+          return;
+       }
 
        // get the tuple spaces state
        debug("Getting TupleSpaceState for server with qualifier: " + qualifier);

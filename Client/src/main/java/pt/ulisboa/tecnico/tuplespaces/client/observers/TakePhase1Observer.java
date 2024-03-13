@@ -1,4 +1,4 @@
-package pt.ulisboa.tecnico.tuplespaces.client;
+package pt.ulisboa.tecnico.tuplespaces.client.observers;
 
 import io.grpc.stub.StreamObserver;
 
@@ -24,7 +24,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
     synchronized public void onNext(TakePhase1Response r) {
         receivedTupleLists.add(r.getReservedTuplesList());
         incrementCount();
-        //System.out.println("Received response: " + r);
     }
 
     @Override
@@ -34,7 +33,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
 
     @Override
     synchronized public void onCompleted() {
-        //System.out.println("Request completed");
     }
 
     synchronized public void incrementCount() {
@@ -57,8 +55,7 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
     }
 
     synchronized public List<String> getIntersectionOfTupleLists() {
-        // NOTE: REMOVER SOP
-        System.out.println(receivedTupleLists);
+        //System.out.println(receivedTupleLists);
 
         if (receivedTupleLists.isEmpty()) {
             return new ArrayList<>();
@@ -70,8 +67,8 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
             intersection.retainAll(receivedTupleLists.get(i));
         }
 
-        // NOTE: REMOVER SOP
-        System.out.println(intersection);
+        //System.out.println(intersection);
+
         return intersection;
     }
 

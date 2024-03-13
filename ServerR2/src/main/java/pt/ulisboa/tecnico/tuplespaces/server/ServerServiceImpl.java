@@ -110,7 +110,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		}
 
 		synchronized (serverState) {
-			// Gets the list of tuples that match the pattern
+			// Gets the list of tuples that match the pattern, locking them in the process
 			matchingTuples = serverState.getAllMatchingFreeTuples(pattern, clientId);
 
 			if (matchingTuples.isEmpty())
@@ -128,7 +128,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			}
 		}
 
-		debug("Returning list with all tuples that aren't locked and match the pattern, sending response to client " + clientId);
+		debug("Sending list of all the tuples that aren't locked and match the pattern to client " + clientId);
 		response = TakePhase1Response.newBuilder().addAllReservedTuples(matchingTuples).build();
 
 		responseObserver.onNext(response);
@@ -140,7 +140,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		int clientId = request.getClientId();
 
 		debug("--------------------");
-		debug("Inside TakePhase1Release for client: " + clientId);
+		debug("Received TakePhase1Release request from client " + clientId);
 
 		synchronized (serverState) {
 			serverState.unlockClientTuples(clientId);
@@ -163,12 +163,12 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		synchronized (serverState) {
 			serverState.take(tuple);
 
-			debug("removed the tuple: " + tuple);
+			debug("Successfully removed the tuple: " + tuple);
 
 			serverState.unlockClientTuples(clientId);
 		}
 
-		debug("Inside TakePhase2 released all locks: ");
+		debug("Successfully unlocked the other tuples locked by the client, sending the removed tuple");
 
 		responseObserver.onNext(TakePhase2Response.newBuilder().build());
 		responseObserver.onCompleted();

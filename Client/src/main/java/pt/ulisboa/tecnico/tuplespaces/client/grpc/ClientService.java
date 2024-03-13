@@ -1,10 +1,8 @@
 package pt.ulisboa.tecnico.tuplespaces.client.grpc;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -20,7 +18,7 @@ import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc.*;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass.*;
 
-import pt.ulisboa.tecnico.tuplespaces.client.*;
+import pt.ulisboa.tecnico.tuplespaces.client.observers.*;
 import pt.ulisboa.tecnico.tuplespaces.client.util.OrderedDelayer;
 
 
@@ -120,7 +118,6 @@ public class ClientService {
     try {
       for (Integer id : delayer) {
         stubs[id].put(putRequest, putObserver);
-        debug("Sent put request to server with id: " + id);
       }
 
       try {
@@ -146,10 +143,8 @@ public class ClientService {
     ReadObserver readObserver = new ReadObserver();
 
     try {
-      //have finished, so it doesn't work for the read command
       for (Integer id : delayer) {
         stubs[id].read(readRequest, readObserver);
-        debug("Sent read request to server with id: " + id);
       }
 
       result = readObserver.waitUntilReceivesResponse();
@@ -183,44 +178,55 @@ public class ClientService {
     String tupleToRemove;
 
     try {
-      /* phase 1 */
+      /* Phase 1 */
       takePhase1Request = TakePhase1Request.newBuilder().setSearchPattern(pattern).
                                             setClientId(this.clientId).build();
+
       for (Integer id : delayer) {
         stubs[id].takePhase1(takePhase1Request, takePhase1Observer);
       }
-      takePhase1Observer.waitUntilAllReceived(numServers);
-      tupleToRemove = takePhase1Observer.getRandomTuple();
-      debug("Phase 1 successful\n" + "Tuple to remove: " + tupleToRemove);
 
-      /* phase 1 relase */
+      takePhase1Observer.waitUntilAllReceived(numServers);
+
+      // getRandomTuple() returns an empty string if the intersection
+      // of the tuple lists received by the replicas is null
+      tupleToRemove = takePhase1Observer.getRandomTuple();
+
+      /* Phase 1 release */
       if (tupleToRemove.isEmpty() || takePhase1Observer.operationFailed()) {
+        debug("There is no common tuple that matches the pattern " +
+              "across all replicas, or an exception ocurred");
+        debug("Sending TakePhase1Release request");
+
         takePhase1ReleaseRequest = TakePhase1ReleaseRequest.newBuilder().setClientId(this.clientId).build();
+
         for (Integer id : delayer) {
           stubs[id].takePhase1Release(takePhase1ReleaseRequest, takePhase1ReleaseObserver);
-        }    
+        }
+
         takePhase1ReleaseObserver.waitUntilAllReceived(numServers); 
-        debug("Phase 1 relase successful");
+        debug("Successfully released the previously locked tuples, aborting operation\n");
+
         return;
       }
+
+      debug("Phase 1 successful\n" + "Tuple to remove: " + tupleToRemove);
       
-      /* phase 2 */
+      /* Phase 2 */
       takePhase2Request = TakePhase2Request.newBuilder().setTuple(tupleToRemove).
                                             setClientId(this.clientId).build();
+
       for (Integer id : delayer) {
         stubs[id].takePhase2(takePhase2Request, takePhase2Observer);
       }
+
       takePhase2Observer.waitUntilAllReceived(numServers);
       debug("Phase 2 successful\n");
 
       System.out.println("OK");
       System.out.println(tupleToRemove);
       System.out.print("\n");
-      /* 
-      else {
-        System.out.printf("Tuple must have the format <element[,more_elements]>" + 
-          " but received: %s\n", result);
-      }*/
+
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
                          e.getStatus().getDescription());
@@ -263,24 +269,5 @@ public class ClientService {
       else {
           return true;
       }
-  }
-
-  public static List<String> intersectionOfTuples(List<List<String>> tuplesEachServer) {
-    // just making sure there is no problem     
-    if (tuplesEachServer == null || tuplesEachServer.isEmpty()) {
-        return new ArrayList<String>();
-    }
-
-    // Create a set to store common tuples
-    Set<String> commonTuples = new HashSet<>(tuplesEachServer.get(0));
-
-    // Iterate through the list of tuples of each server
-    for (int i = 1; i < tuplesEachServer.size(); i++) {
-        Set<String> tplesOneServer = new HashSet<>(tuplesEachServer.get(i));
-        commonTuples.retainAll(tplesOneServer); // Retain only common tuples with the current set
-    }
-
-    // Convert set to list and return
-    return new ArrayList<String>(commonTuples);
   }
 }
