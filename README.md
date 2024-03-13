@@ -24,9 +24,8 @@ code dependency management, to ensure your code runs using the correct component
 ## Getting Started
 
 The overall system is made up of several modules. The different types of servers are located in _ServerX_ (where X denotes stage 1, 2 or 3). 
-The clients is in _Client_.
-The definition of messages and services is in _Contract_. The naming server
-is in _NameServer_.
+The clients are in _Client_.
+The definition of messages and services is in _Contract_. The naming server is in _NameServer_.
 
 See the [Project Statement](https://github.com/tecnico-distsys/TupleSpaces) for a complete domain and system description.
 
@@ -44,19 +43,9 @@ mvn -version
 
 ## Installation
 
-### Server and Client
-
-First, go the ``ServerR1\`` folder and execute the following command:
-
-```s
-mvn install
-```
-
-Afterwards, go to the ``Client\`` folder and execute the same command.
-
 ### Contract
 
-For the Contract folder, start a virtual environment by running the following commands:
+First, start a virtual environment by running the following commands:
 
 For **Windows:**
 ```s
@@ -88,6 +77,28 @@ mvn install
 mvn exec:exec
 ```
 
+The command to exit the virtual environment is ``deactivate``, but do not exit it yet.
+
+### Server
+
+In another terminal, outside the virtual environment, enter the ``ServerR2\`` folder and run the following commands:
+
+```s
+mvn clean
+
+mvn compile
+```
+
+### Client
+
+Finally, in a terminal that is outside the virtual environment, enter the ``Client\`` folder and run the same commands:
+
+```s
+mvn clean
+
+mvn compile
+```
+
 ## Running Instructions
 
 ### NameServer
@@ -104,13 +115,13 @@ You do not need to use the virtual environment for any further steps.
 
 ### TupleSpace Servers
 
-Afterwards, you can run any number of TupleSpace servers by going into the ``ServerR1\`` folder and running the following command:
+Afterwards, run different 3 TupleSpace servers by going into the ``ServerR2\`` folder and running the following command:
 
 ```s
 mvn exec:java -D exec.args="<port> <qualifier>"
 ``` 
 
-Where **\<port\>** is the server's port and **\<qualifier\>** is 'A', 'B' or 'C'. The server's IP is always _localhost_. For additional debug information, append ``-Ddebug`` to the end of the command.
+Where **\<port\>** is the server's port and **\<qualifier\>** is 'A', 'B' or 'C'. There can only be one server for each qualifier, and the server's IP is always _localhost_. For additional debug information, append ``-Ddebug`` to the end of the command.
 
 Each server will automatically connect to the NameServer to register itself, and again upon termination to remove/unregister itself.
 
@@ -122,9 +133,7 @@ You can connect clients to the servers by going into the ``Client\`` folder and 
 mvn exec:java
 ```
 
-Clients will automatically connect to the NameServer to look for available servers with the name "**TupleSpace**" and qualifier "**A**", choosing the first one from the list returned by the NameServer or shutting down if no servers are available. For additional debug information, append ``-Ddebug`` to the end of the command.
-
-The NameServer returns all servers with the given service name and qualifier, or all servers with the given service name if no qualifier is specified.
+Clients will automatically connect to the NameServer to look for available servers with the service name "**TupleSpace**", creating non-blocking stubs to each server or shutting down if less than 3 servers are available (A, B and C). For additional debug information, append ``-Ddebug`` to the end of the command.
 
 ## Built With
 
