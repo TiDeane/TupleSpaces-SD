@@ -115,7 +115,7 @@ You do not need to use the virtual environment for any further steps.
 
 ### TupleSpace Servers
 
-Afterwards, run different 3 TupleSpace servers by going into the ``ServerR2\`` folder and running the following command:
+Afterwards, run 3 different TupleSpace servers by going into the ``ServerR2\`` folder and running the following command:
 
 ```s
 mvn exec:java -D exec.args="<port> <qualifier>"
