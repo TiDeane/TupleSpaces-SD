@@ -112,6 +112,8 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		synchronized (serverState) {
 			// Gets the list of tuples that match the pattern, locking them in the process
 			matchingTuples = serverState.getAllMatchingFreeTuples(pattern, clientId);
+
+			// Client is waiting for Take operation (hasn't sent a Release request)
 			serverState.addClientWaitingTake(clientId);
 
 			if (matchingTuples.isEmpty())
@@ -147,6 +149,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 		synchronized (serverState) {
 			serverState.unlockClientTuples(clientId);
+			// Client is no longer waiting for Take operation
 			serverState.removeClientWaitingTake(clientId);
 			serverState.notifyAll();
 		}

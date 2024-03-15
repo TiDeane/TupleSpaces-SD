@@ -2,6 +2,7 @@ import sys
 sys.path.insert(1, '../Contract/target/generated-sources/protobuf/python')
 import NameServer_pb2 as pb2
 import NameServer_pb2_grpc as pb2_grpc
+from grpc import StatusCode
 from domain.NameServer import NameServer
 from domain.ServiceEntry import ServiceEntry
 from domain.ServerEntry import ServerEntry
@@ -38,8 +39,8 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
                     if server.qualifier == qualifier:
                         self.debug("Operation failed: there is already a server with given name and qualifier")
 
-                        context.set_details("Not possible to register the server: there is already a server with given name and qualifier")
-                        context.set_code(pb2.StatusCode.INTERNAL)
+                        context.set_details("Not possible to register the server, there is already a server with given name and qualifier")
+                        context.set_code(StatusCode.INTERNAL)
                         return pb2.RegisterResponse()
             else:
                 self.debug("Registered new Server:\n" + str(serverEntry))
@@ -54,7 +55,7 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
             
             message = "Not possible to register the server, " + str(e)
             context.set_details(message)
-            context.set_code(pb2.StatusCode.INTERNAL)
+            context.set_code(StatusCode.INTERNAL)
             return pb2.RegisterResponse()
         
     def lookup(self, request, context):
@@ -92,7 +93,7 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
             self.debug("Failed to find a server, with exception: " + str(e))
             
             context.set_details("Failed when looking for available servers")
-            context.set_code(pb2.StatusCode.INTERNAL)
+            context.set_code(StatusCode.INTERNAL)
             return pb2.LookupResponse()
 
     def delete(self, request, context):
@@ -108,7 +109,7 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
             if not self.nameServer.checkServiceInMap(name):
                 self.debug("Service not in map, throwing exception\n")
                 context.set_details("Not possible to delete the server")
-                context.set_code(pb2.StatusCode.INTERNAL)
+                context.set_code(StatusCode.INTERNAL)
                 return pb2.DeleteResponse()
             
             serviceEntry = self.nameServer.getServiceEntry(serviceName=name)
@@ -123,5 +124,5 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
             self.debug("Failed to delete the Server, with exception: " + str(e))
             
             context.set_details("Not possible to delete the server")
-            context.set_code(pb2.StatusCode.INTERNAL)
+            context.set_code(StatusCode.INTERNAL)
             return pb2.DeleteResponse()

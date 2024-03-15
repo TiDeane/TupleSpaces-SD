@@ -4,14 +4,21 @@ import pt.ulisboa.tecnico.tuplespaces.server.domain.TupleSpaceObj;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ServerState {
+
+  // Each TupleSpaceObj stores a String tuple, a flag for whether the tuple
+  // is locked or not and the clientId of the client that locked it 
   private List<TupleSpaceObj> tuples;
-  private List<Integer> clientWaitingTake;
+  
+  // Saves the clientId of clients that are waiting for a Take operation
+  private Set<Integer> clientWaitingTake;
 
   public ServerState() {
     this.tuples = new ArrayList<TupleSpaceObj>();
-    this.clientWaitingTake = new ArrayList<Integer>();
+    this.clientWaitingTake = new HashSet<Integer>();
   }
 
   public synchronized void put(String tuple) {
