@@ -22,8 +22,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
 
     @Override
     synchronized public void onNext(TakePhase1Response r) {
-        // NOTE: apagar
-        System.out.println("Received response: " + r.getReservedTuplesList());
         receivedTupleLists.add(r.getReservedTuplesList());
         incrementCount();
     }
@@ -58,9 +56,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
     }
 
     synchronized public List<String> getIntersectionOfTupleLists() {
-        // NOTE: apagar
-        System.out.println(receivedTupleLists);
-
         if (receivedTupleLists.isEmpty()) {
             return new ArrayList<>();
         }
@@ -70,9 +65,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
         for (int i = 1; i < nResponses; i++) {
             intersection.retainAll(receivedTupleLists.get(i));
         }
-
-        // NOTE: apagar
-        System.out.println(intersection);
 
         return intersection;
     }
@@ -91,8 +83,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
             wait(5000);
             /* verifies if it left the wait because it timed out */
             if (nResponsesBefore == nResponses) {
-                // NOTE: apagar
-                System.out.println("Timed out");
                 waitedFiveSecs = true;
                 break;
             }
@@ -110,8 +100,6 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
          * it means it it will realease the block flag in the servers
          */
         if ((float) n / 2 > nResponses) {
-            // NOTE: apagar
-            System.out.println("minority of the servers");
             operationFailed = true;
         }
     }
