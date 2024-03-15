@@ -81,26 +81,15 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
         while (nResponses < n && !waitedFiveSecs && !operationFailed) {
             nResponsesBefore = nResponses;
             wait(5000);
-            /* verifies if it left the wait because it timed out */
-            if (nResponsesBefore == nResponses) {
-                waitedFiveSecs = true;
-                break;
-            }
             /*
-             * already received the majority of the responses so
-             * It's waiting for the the reste of the responses
+             * verifies if it left the wait because it timed out
+             * and if the majority of the servers didn't respond
+             * leaves the while loop
              */
-            if ((float) n / 2 <= nResponses) {
-                waitedFiveSecs = false;
+            if (nResponsesBefore == nResponses && (float) n / 2 > nResponses) {
+                waitedFiveSecs = true;
+                operationFailed = true;
             }
-            nResponsesBefore++;
-        }
-        /* 
-         * if it didn't receive a response of at least half of the servers
-         * it means it it will realease the block flag in the servers
-         */
-        if ((float) n / 2 > nResponses) {
-            operationFailed = true;
         }
     }
 
