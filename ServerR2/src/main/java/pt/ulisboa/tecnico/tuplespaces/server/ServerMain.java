@@ -70,9 +70,8 @@ public class ServerMain {
 		} catch (StatusRuntimeException e) {
 			System.out.println("Caught exception with description: " + e.getStatus().getDescription());
 
-			channel.shutdown();
 			server.shutdown();
-			return;
+			System.exit(1);
 		}
 
 		// Start the server
