@@ -112,12 +112,14 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		synchronized (serverState) {
 			// Gets the list of tuples that match the pattern, locking them in the process
 			matchingTuples = serverState.getAllMatchingFreeTuples(pattern, clientId);
+			serverState.addClientWaitingTake(clientId);
 
 			if (matchingTuples.isEmpty())
 				debug("There is no tuple that matches the given pattern, " +
+					  "or all the matching tuples are locked," +
 					  "putting the client on hold");
 
-			while (matchingTuples.isEmpty()) {
+			while (matchingTuples.isEmpty() && serverState.isClientWaitingTake(clientId)) {
 				try {
 					serverState.wait();
 					matchingTuples = serverState.getAllMatchingFreeTuples(pattern, clientId);
@@ -126,6 +128,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 					System.err.println("Interrupted while waiting: " + e.getMessage());		  
 				}
 			}
+			serverState.removeClientWaitingTake(clientId);
 		}
 
 		debug("Sending list of all the tuples that aren't locked and match the pattern to client " + clientId);
@@ -144,6 +147,8 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 		synchronized (serverState) {
 			serverState.unlockClientTuples(clientId);
+			serverState.removeClientWaitingTake(clientId);
+			serverState.notifyAll();
 		}
 
 		debug("Successfully unlocked all tuples locked by client " + clientId);

@@ -7,9 +7,11 @@ import java.util.List;
 
 public class ServerState {
   private List<TupleSpaceObj> tuples;
+  private List<Integer> clientWaitingTake;
 
   public ServerState() {
     this.tuples = new ArrayList<TupleSpaceObj>();
+    this.clientWaitingTake = new ArrayList<Integer>();
   }
 
   public synchronized void put(String tuple) {
@@ -47,6 +49,18 @@ public class ServerState {
         tuple.unlockTuple();
       }
     }
+  }
+
+  public synchronized boolean isClientWaitingTake(int clientId) {
+    return this.clientWaitingTake.contains(clientId);
+  }
+
+  public synchronized void addClientWaitingTake(int clientId) {
+    this.clientWaitingTake.add(clientId); 
+  }
+
+  public synchronized void removeClientWaitingTake(int clientId) {
+    this.clientWaitingTake.remove(Integer.valueOf(clientId));
   }
 
   public synchronized String read(String pattern) {

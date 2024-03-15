@@ -22,6 +22,8 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
 
     @Override
     synchronized public void onNext(TakePhase1Response r) {
+        // NOTE: apagar
+        System.out.println("Received response: " + r.getReservedTuplesList());
         receivedTupleLists.add(r.getReservedTuplesList());
         incrementCount();
     }
@@ -29,6 +31,7 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
     @Override
     synchronized public void onError(Throwable throwable) {
         operationFailed = true;
+        notifyAll();
     }
 
     @Override
@@ -55,7 +58,8 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
     }
 
     synchronized public List<String> getIntersectionOfTupleLists() {
-        //System.out.println(receivedTupleLists);
+        // NOTE: apagar
+        System.out.println(receivedTupleLists);
 
         if (receivedTupleLists.isEmpty()) {
             return new ArrayList<>();
@@ -67,14 +71,49 @@ public class TakePhase1Observer implements StreamObserver<TakePhase1Response> {
             intersection.retainAll(receivedTupleLists.get(i));
         }
 
-        //System.out.println(intersection);
+        // NOTE: apagar
+        System.out.println(intersection);
 
         return intersection;
     }
 
+    /* if it didn't receive the response in 5 seconds it changes the operationFailed flag to true */
     synchronized public void waitUntilAllReceived(int n) throws InterruptedException {
-        while (nResponses < n) 
-            wait();
+        int nResponsesBefore;
+        boolean waitedFiveSecs = false;
+        /* the only way to leave this while loop is by:
+         * -> receiving all responses 
+         * -> waiting 5 seconds and not receiving the majority of the responses 
+         * -> one of the servers gives an error 
+         */
+        while (nResponses < n && !waitedFiveSecs && !operationFailed) {
+            nResponsesBefore = nResponses;
+            wait(5000);
+            /* verifies if it left the wait because it timed out */
+            if (nResponsesBefore == nResponses) {
+                // NOTE: apagar
+                System.out.println("Timed out");
+                waitedFiveSecs = true;
+                break;
+            }
+            /*
+             * already received the majority of the responses so
+             * It's waiting for the the reste of the responses
+             */
+            if ((float) n / 2 <= nResponses) {
+                waitedFiveSecs = false;
+            }
+            nResponsesBefore++;
+        }
+        /* 
+         * if it didn't receive a response of at least half of the servers
+         * it means it it will realease the block flag in the servers
+         */
+        if ((float) n / 2 > nResponses) {
+            // NOTE: apagar
+            System.out.println("minority of the servers");
+            operationFailed = true;
+        }
     }
 
     public boolean operationFailed() {
