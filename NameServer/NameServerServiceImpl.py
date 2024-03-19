@@ -43,7 +43,7 @@ class NameServerServiceImpl(pb2_grpc.NameServerServicer):
                         context.set_code(StatusCode.INTERNAL)
                         return pb2.RegisterResponse()
             else:
-                self.debug("Registered new Server:\n" + str(serverEntry))
+                self.debug("Registered new service, called " + name + ":\n" + str(serverEntry))
                 serviceEntry = ServiceEntry(serviceName=name)
                 self.nameServer.registerServiceEntry(serviceEntry)
             

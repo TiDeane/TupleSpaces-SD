@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.ArrayList;
 
 import io.grpc.stub.StreamObserver;
-import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov;
-import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov.*;
-import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc.TupleSpacesReplicaImplBase;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.*;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaGrpc.TupleSpacesReplicaImplBase;
 import pt.ulisboa.tecnico.tuplespaces.server.domain.ServerState;
 
 import static io.grpc.Status.INVALID_ARGUMENT;
@@ -17,10 +17,13 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 	private boolean debugFlag = false;
 
+	private int nextOp;
+
 	private ServerState serverState = new ServerState();
 
 	public ServerServiceImpl(boolean dFlag) {
 		debugFlag = dFlag;
+		nextOp = 0;
 	}
 
 	/** Helper method to print debug messages. */
@@ -32,9 +35,10 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 	@Override
 	public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
 		String tuple = request.getNewTuple();
+		int seqNumber = request.getSeqNumber();
 
 		debug("--------------------");
-		debug("Received Put request with tuple: " + tuple);
+		debug("Received Put request with tuple " + tuple + "and sequence number " + seqNumber);
 
 		if (!isTupleValid(tuple)) {
 			debug("Tuple is not valid, sending exception");
@@ -42,9 +46,26 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			return;
 		}
 
+		try {
+			while (seqNumber != nextOp) {
+				wait();
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
 		synchronized (serverState) {
+			try {
+				while (seqNumber != nextOp) {
+					wait();
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
 			serverState.put(tuple);
-			serverState.notifyAll();
+			nextOp++;
+			serverState.notifyAll(); // NOTE: Maybe this should be out of the synchronized block?
 		}
 
 		debug("Successfully put tuple, sending response");
@@ -86,7 +107,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		}
 
 		debug("The first tuple read that matches the pattern is " + tuple + ", sending response");
-		TupleSpacesReplicaXuLiskov.ReadResponse response = ReadResponse.newBuilder()
+		ReadResponse response = ReadResponse.newBuilder()
 			.setResult(tuple).build();
 
 		responseObserver.onNext(response);
@@ -94,8 +115,8 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 	}
 
 	@Override
-	public void takePhase1(TakePhase1Request request, StreamObserver<TakePhase1Response> responseObserver) {
-		TakePhase1Response response;
+	public void take(TakeRequest request, StreamObserver<TakeResponse> responseObserver) {
+		/*TakePhase1Response response;
 		String pattern = request.getSearchPattern();
 		int clientId = request.getClientId();
 		List<String> matchingTuples;
@@ -137,51 +158,8 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		response = TakePhase1Response.newBuilder().addAllReservedTuples(matchingTuples).build();
 
 		responseObserver.onNext(response);
-		responseObserver.onCompleted();
+		responseObserver.onCompleted();*/
 	}
-
-	@Override
-	public void takePhase1Release(TakePhase1ReleaseRequest request, StreamObserver<TakePhase1ReleaseResponse> responseObserver) {
-		int clientId = request.getClientId();
-
-		debug("--------------------");
-		debug("Received TakePhase1Release request from client " + clientId);
-
-		synchronized (serverState) {
-			serverState.unlockClientTuples(clientId);
-			// Client is no longer waiting for Take operation
-			serverState.removeClientWaitingTake(clientId);
-			serverState.notifyAll();
-		}
-
-		debug("Successfully unlocked all tuples locked by client " + clientId);
-
-		responseObserver.onNext(TakePhase1ReleaseResponse.newBuilder().build());
-		responseObserver.onCompleted();
-	}
-
-	@Override
-	public void takePhase2(TakePhase2Request request, StreamObserver<TakePhase2Response> responseObserver) {
-		int clientId = request.getClientId();
-		String tuple = request.getTuple();
-
-		debug("--------------------");
-		debug("Inside TakePhase2 for client: " + clientId);
-
-		synchronized (serverState) {
-			serverState.take(tuple);
-
-			debug("Successfully removed the tuple: " + tuple);
-
-			serverState.unlockClientTuples(clientId);
-		}
-
-		debug("Successfully unlocked the other tuples locked by the client, sending the removed tuple");
-
-		responseObserver.onNext(TakePhase2Response.newBuilder().build());
-		responseObserver.onCompleted();
-	}
-
 
 	@Override
 	public void getTupleSpacesState(getTupleSpacesStateRequest request, StreamObserver<getTupleSpacesStateResponse> responseObserver) {
@@ -190,7 +168,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		debug("--------------------");
 		debug("Received GetTupleSpacesState request, sending response");
 
-		TupleSpacesReplicaXuLiskov.getTupleSpacesStateResponse response = TupleSpacesReplicaXuLiskov.getTupleSpacesStateResponse.newBuilder()
+		getTupleSpacesStateResponse response = getTupleSpacesStateResponse.newBuilder()
 			.addAllTuple(tuples).build();
 
 		responseObserver.onNext(response);

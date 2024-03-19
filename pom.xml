@@ -18,6 +18,7 @@
 		<module>ServerR1</module>
 		<module>ServerR2</module>
 		<module>ServerR3</module>
+		<module>Sequencer</module>
 	</modules>
 
 </project>
