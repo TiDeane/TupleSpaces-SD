@@ -2,21 +2,25 @@ package pt.ulisboa.tecnico.tuplespaces.client.grpc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 
-import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov;
-import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaXuLiskov.*;
-import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc;
-import pt.ulisboa.tecnico.tuplespaces.replicaXuLiskov.contract.TupleSpacesReplicaGrpc.*;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.*;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaGrpc;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaGrpc.*;
 
 import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerGrpc.*;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass;
 import pt.ulisboa.tecnico.nameserver.contract.NameServerOuterClass.*;
+
+import pt.ulisboa.tecnico.sequencer.contract.SequencerGrpc;
+import pt.ulisboa.tecnico.sequencer.contract.SequencerGrpc.SequencerBlockingStub;
+import pt.ulisboa.tecnico.sequencer.contract.SequencerOuterClass.GetSeqNumberRequest;
+import pt.ulisboa.tecnico.sequencer.contract.SequencerOuterClass.GetSeqNumberResponse;
 
 import pt.ulisboa.tecnico.tuplespaces.client.observers.*;
 import pt.ulisboa.tecnico.tuplespaces.client.util.OrderedDelayer;
@@ -29,20 +33,16 @@ public class ClientService {
   private static final String BGN_TUPLE = "<";
   private static final String END_TUPLE = ">";
 
+  private static final int SEQUENCER_PORT = 5002;
+  private static final String SEQUENCER_HOST = "localhost";
+
   private int numServers;
   private OrderedDelayer delayer;
-  private int clientId;
 
   private boolean debugFlag;
 
   // This array is instantialized inside CommandProcesssor
   public TupleSpacesReplicaStub[] stubs;
-
-  public ClientService() {
-    // Initializes this client's ID with a seed based on the current time
-    Random random = new Random(System.currentTimeMillis());
-    clientId = random.nextInt(Integer.MAX_VALUE);
-  }
 
   private void debug(String debugMessage) {
 		if (debugFlag)
@@ -104,6 +104,33 @@ public class ClientService {
     
   }
 
+  /* Contacts the Sequencer service to acquire the calling operation's sequence number */
+  public int getSequenceNumber() {
+    int seqNumber;
+    String target = SEQUENCER_HOST + ":" + SEQUENCER_PORT;
+    
+    final ManagedChannel sequencerCh = this.buildChannel(target);
+    SequencerBlockingStub sequencerStub;
+    sequencerStub = SequencerGrpc.newBlockingStub(sequencerCh);
+
+    try { 
+      GetSeqNumberResponse seqNumberResponse;
+      seqNumberResponse = sequencerStub.getSeqNumber(GetSeqNumberRequest.getDefaultInstance());
+
+      seqNumber = seqNumberResponse.getSeqNumber();
+
+      sequencerCh.shutdownNow();
+
+      return seqNumber;
+
+    } catch (StatusRuntimeException e) {
+      System.out.println("Caught exception with description: " + e.getStatus().getDescription());
+      sequencerCh.shutdownNow();
+      
+      return -1;
+    }
+  }
+
   /* This method allows the command processor to set the request delay assigned to a given server */
   public void setDelay(int id, int delay) {
     delayer.setDelay(id, delay);
@@ -111,7 +138,14 @@ public class ClientService {
 
   public void put(String tuple) {
     PutRequest putRequest;
-    putRequest = TupleSpacesReplicaXuLiskov.PutRequest.newBuilder().setNewTuple(tuple).build();
+    int seqNumber = getSequenceNumber();
+
+    if (seqNumber == -1) {
+      System.out.println("An error ocurred while acquiring sequence number, aborting Put command");
+      return;
+    }
+
+    putRequest = PutRequest.newBuilder().setNewTuple(tuple).setSeqNumber(seqNumber).build();
 
     PutObserver putObserver = new PutObserver();
 
@@ -136,8 +170,8 @@ public class ClientService {
   }
 
   public void read(String tuple) {
-    TupleSpacesReplicaXuLiskov.ReadRequest readRequest;
-    readRequest = TupleSpacesReplicaXuLiskov.ReadRequest.newBuilder().setSearchPattern(tuple).build();
+    ReadRequest readRequest;
+    readRequest = ReadRequest.newBuilder().setSearchPattern(tuple).build();
     String result = "";
 
     ReadObserver readObserver = new ReadObserver();
@@ -167,7 +201,7 @@ public class ClientService {
   }
 
   public void take(String pattern) {
-    TakePhase1Request takePhase1Request;
+    /*TakePhase1Request takePhase1Request;
     TakePhase1ReleaseRequest takePhase1ReleaseRequest;
     TakePhase2Request takePhase2Request;
 
@@ -178,7 +212,7 @@ public class ClientService {
     String tupleToRemove;
 
     try {
-      /* Phase 1 */
+      /* Phase 1 
       takePhase1Request = TakePhase1Request.newBuilder().setSearchPattern(pattern).
                                             setClientId(this.clientId).build();
 
@@ -192,7 +226,7 @@ public class ClientService {
       // of the tuple lists received by the replicas is null
       tupleToRemove = takePhase1Observer.getRandomTuple();
 
-      /* Phase 1 release */
+      /* Phase 1 release 
       if (tupleToRemove.isEmpty() || takePhase1Observer.operationFailed()) {
         debug("There is no common tuple that matches the pattern " +
               "across all replicas, or an exception ocurred");
@@ -212,7 +246,7 @@ public class ClientService {
 
       debug("Phase 1 successful\n" + "Tuple to remove: " + tupleToRemove);
       
-      /* Phase 2 */
+      /* Phase 2 
       takePhase2Request = TakePhase2Request.newBuilder().setTuple(tupleToRemove).
                                             setClientId(this.clientId).build();
 
@@ -232,20 +266,20 @@ public class ClientService {
                          e.getStatus().getDescription());
     } catch (InterruptedException e) {
       e.printStackTrace();
-    }
+    }*/
   }
 
   public void getTupleSpacesState(int id) {
-    getTupleSpacesStateRequest getTupleSpacesStateRequest;
+    getTupleSpacesStateRequest tupleSpacesStateRequest;
 
     GetTupleSpacesStateObserver observer = new GetTupleSpacesStateObserver();
 
     try {
-      getTupleSpacesStateRequest = TupleSpacesReplicaXuLiskov.getTupleSpacesStateRequest.getDefaultInstance();
+      tupleSpacesStateRequest = getTupleSpacesStateRequest.getDefaultInstance();
 
       System.out.println("OK");
 
-      stubs[id].getTupleSpacesState(getTupleSpacesStateRequest, observer);
+      stubs[id].getTupleSpacesState(tupleSpacesStateRequest, observer);
 
       observer.printTupleSpace();
       System.out.print("\n");

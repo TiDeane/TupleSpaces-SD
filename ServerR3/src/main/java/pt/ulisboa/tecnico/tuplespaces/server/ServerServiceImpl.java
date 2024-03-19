@@ -38,7 +38,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		int seqNumber = request.getSeqNumber();
 
 		debug("--------------------");
-		debug("Received Put request with tuple " + tuple + "and sequence number " + seqNumber);
+		debug("Received Put request with tuple " + tuple + " and sequence number " + seqNumber);
 
 		if (!isTupleValid(tuple)) {
 			debug("Tuple is not valid, sending exception");

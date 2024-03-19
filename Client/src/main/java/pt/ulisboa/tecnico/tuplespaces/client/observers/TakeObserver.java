@@ -1,16 +1,16 @@
 package pt.ulisboa.tecnico.tuplespaces.client.observers;
 
 import io.grpc.stub.StreamObserver;
-import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.ReadResponse;
+import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.TakeResponse;
 
-public class ReadObserver implements StreamObserver<ReadResponse> {
+public class TakeObserver implements StreamObserver<TakeResponse> {
     String response;
 
-    public ReadObserver() {
+    public TakeObserver() {
     }
 
     @Override
-    synchronized public void onNext(ReadResponse r) {
+    synchronized public void onNext(TakeResponse r) {
         response = r.getResult(); 
         notifyAll();
     }
