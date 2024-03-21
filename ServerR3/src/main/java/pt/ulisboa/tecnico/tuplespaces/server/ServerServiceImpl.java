@@ -38,20 +38,13 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		int seqNumber = request.getSeqNumber();
 
 		debug("--------------------");
-		debug("Received Put request with tuple " + tuple + " and sequence number " + seqNumber);
+		debug("Received Put request with tuple " + tuple + " and sequence number " + seqNumber +
+			", and nextOp is currently " + nextOp);
 
 		if (!isTupleValid(tuple)) {
 			debug("Tuple is not valid, sending exception");
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
-		}
-
-		try {
-			while (seqNumber != nextOp) {
-				wait();
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 
 		synchronized (serverState) {
@@ -62,10 +55,15 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
+			
 			serverState.put(tuple);
+			
 			nextOp++;
-			serverState.notifyAll(); // NOTE: Maybe this should be out of the synchronized block?
+			
+			serverState.awakeReadThreads();
+			serverState.awakeTakeThread(tuple);
+
+			serverState.notifyAll();
 		}
 
 		debug("Successfully put tuple, sending response");
@@ -89,22 +87,29 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			return;
 		}
 
-		synchronized (serverState) {
+		Thread thread = Thread.currentThread();
+
+		synchronized (thread) {
 			tuple = serverState.read(pattern);
 
 			if (tuple == null)
 				debug("There is no tuple that matches the given pattern, " +
 					  "putting the client on hold");
+
+			serverState.addReadThread(thread);
 			
 			while (tuple == null) {
 				try {
-					serverState.wait();
-					tuple = serverState.read(pattern);
+					thread.wait();
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					System.err.println("Interrupted while waiting: " + e.getMessage());		  
 				}
+
+				tuple = serverState.read(pattern);
 			}
+
+			serverState.removeReadThread(thread);
 		}
 
 		debug("The first tuple read that matches the pattern is " + tuple + ", sending response");
@@ -128,14 +133,6 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			debug("Pattern has the wrong format, sending exception");
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
-		}
-
-		try {
-			while (seqNumber != nextOp) {
-				wait();
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
 
 		synchronized (serverState) {
