@@ -33,7 +33,7 @@ public class ClientService {
   private static final String BGN_TUPLE = "<";
   private static final String END_TUPLE = ">";
 
-  private static final int SEQUENCER_PORT = 5002;
+  private static final int SEQUENCER_PORT = 8080;
   private static final String SEQUENCER_HOST = "localhost";
 
   private int numServers;

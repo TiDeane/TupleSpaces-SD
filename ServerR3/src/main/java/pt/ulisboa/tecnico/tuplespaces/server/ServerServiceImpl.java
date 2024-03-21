@@ -23,7 +23,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 	public ServerServiceImpl(boolean dFlag) {
 		debugFlag = dFlag;
-		nextOp = 0;
+		nextOp = 1;
 	}
 
 	/** Helper method to print debug messages. */
@@ -84,6 +84,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		debug("Received Read request with pattern: " + pattern);
 
 		if (!isTupleValid(pattern)) {
+			debug("Pattern has the wrong format, sending exception");
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
 		}
@@ -116,49 +117,62 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 	@Override
 	public void take(TakeRequest request, StreamObserver<TakeResponse> responseObserver) {
-		/*TakePhase1Response response;
 		String pattern = request.getSearchPattern();
-		int clientId = request.getClientId();
-		List<String> matchingTuples;
+		int seqNumber = request.getSeqNumber();
+		String tuple;
 
 		debug("--------------------");
-		debug("Received Take request with pattern: " + pattern);
+		debug("Received Take request with pattern " + pattern + " and sequence number " + seqNumber);
 
 		if (!isTupleValid(pattern)) {
-			debug("Pattern is not valid, sending exception");
+			debug("Pattern has the wrong format, sending exception");
 			responseObserver.onError(INVALID_ARGUMENT.withDescription("Tuple must have the format <element[,more_elements]>").asRuntimeException());
 			return;
 		}
 
+		try {
+			while (seqNumber != nextOp) {
+				wait();
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
 		synchronized (serverState) {
-			// Gets the list of tuples that match the pattern, locking them in the process
-			matchingTuples = serverState.getAllMatchingFreeTuples(pattern, clientId);
+			try {
+				while (seqNumber != nextOp) {
+					wait();
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 
-			// Client is waiting for Take operation (hasn't sent a Release request)
-			serverState.addClientWaitingTake(clientId);
+			tuple = serverState.take(pattern);
 
-			if (matchingTuples.isEmpty())
+			if (tuple == null)
 				debug("There is no tuple that matches the given pattern, " +
-					  "or all the matching tuples are locked," +
 					  "putting the client on hold");
-
-			while (matchingTuples.isEmpty() && serverState.isClientWaitingTake(clientId)) {
+			
+			while (tuple == null) {
 				try {
 					serverState.wait();
-					matchingTuples = serverState.getAllMatchingFreeTuples(pattern, clientId);
+					tuple = serverState.take(pattern);
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					System.err.println("Interrupted while waiting: " + e.getMessage());		  
 				}
 			}
-			serverState.removeClientWaitingTake(clientId);
+
+			nextOp++;
+			serverState.notifyAll();
 		}
 
-		debug("Sending list of all the tuples that aren't locked and match the pattern to client " + clientId);
-		response = TakePhase1Response.newBuilder().addAllReservedTuples(matchingTuples).build();
+		debug("The first tuple read that matches the pattern is " + tuple + ", sending response");
+		TakeResponse response = TakeResponse.newBuilder()
+			.setResult(tuple).build();
 
 		responseObserver.onNext(response);
-		responseObserver.onCompleted();*/
+		responseObserver.onCompleted();
 	}
 
 	@Override

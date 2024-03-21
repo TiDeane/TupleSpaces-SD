@@ -20,9 +20,8 @@
 		<version.maven-compiler-plugin>3.8.1</version.maven-compiler-plugin>
 		<version.exec-maven-plugin>3.0.0</version.exec-maven-plugin>
 
-		<mainclass>pt.ulisboa.tecnico.tuplespaces.sequencer.SequencerMain</mainclass>
-		<server.qual>A</server.qual>
-
+		<mainclass>pt.ulisboa.tecnico.tuplespaces.sequencer.SequencerServer</mainclass>
+		<server.port>8080</server.port>
 	</properties>
 
 	<dependencies>
@@ -62,7 +61,7 @@
 				<configuration>
 					<mainClass>${mainclass}</mainClass>
 					<arguments>
-						<argument>${server.qual}</argument>						
+						<argument>${server.port}</argument>
 					</arguments>
 				</configuration>
 			</plugin>
