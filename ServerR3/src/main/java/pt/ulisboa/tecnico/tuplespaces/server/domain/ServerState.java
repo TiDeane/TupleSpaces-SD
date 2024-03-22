@@ -16,12 +16,12 @@ public class ServerState {
    * by the sequence number
    */
   private Map<String, PriorityQueue<TakeObj>> takeMap;
-  private List<Thread> readList;
+  private Map<Thread, String> readMap;
 
   public ServerState() {
     this.tuples = new ArrayList<String>();
     this.takeMap = new HashMap<>();
-    this.readList = new ArrayList<>();
+    this.readMap = new HashMap<>();
   }
 
   public synchronized void put(String tuple) {
@@ -53,12 +53,12 @@ public class ServerState {
     return this.tuples;
   }
 
-  public synchronized void addReadThread(Thread thread) {
-    readList.add(thread);
+  public synchronized void addReadThread(Thread thread, String pattern) {
+    readMap.put(thread, pattern);
   }
 
   public synchronized void removeReadThread(Thread thread) {
-    readList.remove(thread);
+    readMap.remove(thread);
   }
 
   public synchronized void addTakeObj(String pattern, TakeObj takeObj) {
@@ -115,11 +115,16 @@ public class ServerState {
     }
   }
 
-  public synchronized void awakeReadThreads() {
-    for (int i = 0; i < readList.size(); i++) {
-      synchronized(readList.get(i)) {
-        readList.get(i).notify();
-      }
+  public synchronized void awakeReadThreads(String readPattern) {
+    for (Map.Entry<Thread, String> entry : readMap.entrySet()) {
+        Thread thread = entry.getKey();
+        String pattern = entry.getValue();
+
+        if (pattern.matches(readPattern)) {
+            synchronized (thread) {
+                thread.notify();
+            }
+        }
     }
   }
 }

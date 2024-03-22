@@ -60,7 +60,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			
 			nextOp++;
 			
-			serverState.awakeReadThreads();
+			serverState.awakeReadThreads(tuple);
 			serverState.awakeTakeThread(tuple);
 
 			serverState.notifyAll();
@@ -91,14 +91,12 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 		synchronized (thread) {
 			tuple = serverState.read(pattern);
-
-			if (tuple == null)
-				debug("There is no tuple that matches the given pattern, " +
-					  "putting the client on hold");
-
-			serverState.addReadThread(thread);
 			
-			while (tuple == null) {
+			if (tuple == null) {
+				debug("There is no tuple that matches the given pattern, " +
+					  "putting the client on hold");				
+					  
+				serverState.addReadThread(thread, pattern);
 				try {
 					thread.wait();
 				} catch (InterruptedException e) {
@@ -107,9 +105,8 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 				}
 
 				tuple = serverState.read(pattern);
+				serverState.removeReadThread(thread);
 			}
-
-			serverState.removeReadThread(thread);
 		}
 
 		debug("The first tuple read that matches the pattern is " + tuple + ", sending response");

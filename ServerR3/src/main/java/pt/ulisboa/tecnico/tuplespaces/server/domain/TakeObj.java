@@ -21,4 +21,9 @@ public class TakeObj implements Comparable<TakeObj>{
     public int compareTo(TakeObj other) {
         return Integer.compare(this.seqNumber, other.seqNumber);
     }
+
+    @Override
+    public String toString() {
+        return "Thread: " + thread + ", SeqNumber: " + seqNumber;
+    }
 }
