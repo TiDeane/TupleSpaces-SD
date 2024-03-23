@@ -7,7 +7,9 @@ import io.grpc.stub.StreamObserver;
 import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder;
 import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaTotalOrder.*;
 import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesReplicaGrpc.TupleSpacesReplicaImplBase;
+
 import pt.ulisboa.tecnico.tuplespaces.server.domain.ServerState;
+import pt.ulisboa.tecnico.tuplespaces.server.domain.TakeObj;
 
 import static io.grpc.Status.INVALID_ARGUMENT;
 
@@ -50,7 +52,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		synchronized (serverState) {
 			try {
 				while (seqNumber != nextOp) {
-					wait();
+					serverState.wait();
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -66,7 +68,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			serverState.notifyAll();
 		}
 
-		debug("Successfully put tuple, sending response");
+		debug("Successfully put tuple (sequence number "+seqNumber+"), sending response");
 		PutResponse response = PutResponse.newBuilder().build();
 
 		responseObserver.onNext(response);
@@ -98,6 +100,8 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 					  
 				serverState.addReadThread(thread, pattern);
 				try {
+					// The thread is only woken up when there's a tuple that matches
+					// its desired pattern
 					thread.wait();
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
@@ -136,33 +140,40 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		synchronized (serverState) {
 			try {
 				while (seqNumber != nextOp) {
-					wait();
+					serverState.wait();
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 
 			tuple = serverState.take(pattern);
+		}
 
-			if (tuple == null)
-				debug("There is no tuple that matches the given pattern, " +
-					  "putting the client on hold");
-			
+		// Increments nextOp regardless of whether the operation was successful
+		nextOp++;
+
+		Thread thread = Thread.currentThread();
+		TakeObj takeObj = new TakeObj(thread, seqNumber);
+
+		if (tuple == null) {
+			debug("There is no tuple that matches the given pattern, " +
+					"putting the client on hold");
+		}
+		
+		synchronized(thread) {
 			while (tuple == null) {
+				serverState.addTakeObj(pattern, takeObj);
 				try {
-					serverState.wait();
+					thread.wait();
 					tuple = serverState.take(pattern);
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 					System.err.println("Interrupted while waiting: " + e.getMessage());		  
 				}
 			}
-
-			nextOp++;
-			serverState.notifyAll();
 		}
 
-		debug("The first tuple read that matches the pattern is " + tuple + ", sending response");
+		debug("The first tuple read that matches the pattern is " + tuple + ", sending response (sequence number "+seqNumber+")");
 		TakeResponse response = TakeResponse.newBuilder()
 			.setResult(tuple).build();
 

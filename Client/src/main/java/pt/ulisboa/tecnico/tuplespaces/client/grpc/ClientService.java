@@ -154,11 +154,7 @@ public class ClientService {
         stubs[id].put(putRequest, putObserver);
       }
 
-      try {
-        putObserver.waitUntilAllReceived(numServers);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
+      putObserver.waitUntilAllReceived(numServers);
 
       System.out.println("OK");
       System.out.print("\n");
@@ -166,6 +162,8 @@ public class ClientService {
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
         e.getStatus().getDescription());
+    } catch (InterruptedException e) {
+        e.printStackTrace();
     }
   }
 
@@ -201,72 +199,41 @@ public class ClientService {
   }
 
   public void take(String pattern) {
-    /*TakePhase1Request takePhase1Request;
-    TakePhase1ReleaseRequest takePhase1ReleaseRequest;
-    TakePhase2Request takePhase2Request;
+    TakeRequest takeRequest;
+    int seqNumber = getSequenceNumber();
 
-    TakePhase1Observer takePhase1Observer = new TakePhase1Observer();
-    TakePhase1ReleaseObserver takePhase1ReleaseObserver = new TakePhase1ReleaseObserver();
-    TakePhase2Observer takePhase2Observer = new TakePhase2Observer();
+    if (seqNumber == -1) {
+      System.out.println("An error ocurred while acquiring sequence number, aborting Put command");
+      return;
+    }
 
-    String tupleToRemove;
+    takeRequest = TakeRequest.newBuilder().setSearchPattern(pattern).setSeqNumber(seqNumber).build();
+
+    TakeObserver takeObserver = new TakeObserver();
 
     try {
-      /* Phase 1 
-      takePhase1Request = TakePhase1Request.newBuilder().setSearchPattern(pattern).
-                                            setClientId(this.clientId).build();
-
       for (Integer id : delayer) {
-        stubs[id].takePhase1(takePhase1Request, takePhase1Observer);
+        stubs[id].take(takeRequest, takeObserver);
       }
 
-      takePhase1Observer.waitUntilAllReceived(numServers);
+      String result = takeObserver.waitUntilReceivesResponse();
 
-      // getRandomTuple() returns an empty string if the intersection
-      // of the tuple lists received by the replicas is null
-      tupleToRemove = takePhase1Observer.getRandomTuple();
-
-      /* Phase 1 release 
-      if (tupleToRemove.isEmpty() || takePhase1Observer.operationFailed()) {
-        debug("There is no common tuple that matches the pattern " +
-              "across all replicas, or an exception ocurred");
-        debug("Sending TakePhase1Release request");
-
-        takePhase1ReleaseRequest = TakePhase1ReleaseRequest.newBuilder().setClientId(this.clientId).build();
-
-        for (Integer id : delayer) {
-          stubs[id].takePhase1Release(takePhase1ReleaseRequest, takePhase1ReleaseObserver);
-        }
-
-        takePhase1ReleaseObserver.waitUntilAllReceived(numServers); 
-        debug("Successfully released the previously locked tuples, aborting operation\n");
-
-        return;
+      if (isTupleValid(result)) {
+        System.out.println("OK");
+        System.out.println(result);
+        System.out.print("\n");
       }
-
-      debug("Phase 1 successful\n" + "Tuple to remove: " + tupleToRemove);
-      
-      /* Phase 2 
-      takePhase2Request = TakePhase2Request.newBuilder().setTuple(tupleToRemove).
-                                            setClientId(this.clientId).build();
-
-      for (Integer id : delayer) {
-        stubs[id].takePhase2(takePhase2Request, takePhase2Observer);
+      else {
+        System.out.printf("Tuple must have the format <element[,more_elements]>" + 
+          " but received: %s\n", result);
       }
-
-      takePhase2Observer.waitUntilAllReceived(numServers);
-      debug("Phase 2 successful\n");
-
-      System.out.println("OK");
-      System.out.println(tupleToRemove);
-      System.out.print("\n");
 
     } catch (StatusRuntimeException e) {
       System.out.println("Caught exception with description: " + 
-                         e.getStatus().getDescription());
+        e.getStatus().getDescription());
     } catch (InterruptedException e) {
-      e.printStackTrace();
-    }*/
+        e.printStackTrace();
+    }
   }
 
   public void getTupleSpacesState(int id) {

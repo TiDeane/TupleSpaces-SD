@@ -61,6 +61,19 @@ public class ServerState {
     readMap.remove(thread);
   }
 
+  public synchronized void awakeReadThreads(String readPattern) {
+    for (Map.Entry<Thread, String> entry : readMap.entrySet()) {
+      String pattern = entry.getValue();
+
+      if (readPattern.matches(pattern)) {
+        Thread thread = entry.getKey();
+        synchronized (thread) {
+          thread.notify();
+        }
+      }
+    }
+  }
+
   public synchronized void addTakeObj(String pattern, TakeObj takeObj) {
     PriorityQueue<TakeObj> queue = takeMap.get(pattern);
     
@@ -112,19 +125,6 @@ public class ServerState {
 
     if (minQueue.isEmpty() || lastPattern != null) {
       takeMap.remove(lastPattern);
-    }
-  }
-
-  public synchronized void awakeReadThreads(String readPattern) {
-    for (Map.Entry<Thread, String> entry : readMap.entrySet()) {
-      String pattern = entry.getValue();
-
-      if (readPattern.matches(pattern)) {
-        Thread thread = entry.getKey();
-        synchronized (thread) {
-          thread.notify();
-        }
-      }
     }
   }
 }

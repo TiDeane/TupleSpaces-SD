@@ -4,6 +4,11 @@ public class TakeObj implements Comparable<TakeObj>{
     Thread thread;
     int seqNumber;
 
+    public TakeObj(Thread thread, int seqNumber) {
+        this.thread = thread;
+        this.seqNumber = seqNumber;
+    }
+
     public TakeObj(int seqNumber) {
         this.thread = Thread.currentThread();
         this.seqNumber = seqNumber;
