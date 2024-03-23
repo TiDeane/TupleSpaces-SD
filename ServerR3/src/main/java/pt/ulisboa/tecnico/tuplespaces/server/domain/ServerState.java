@@ -117,14 +117,14 @@ public class ServerState {
 
   public synchronized void awakeReadThreads(String readPattern) {
     for (Map.Entry<Thread, String> entry : readMap.entrySet()) {
-        Thread thread = entry.getKey();
-        String pattern = entry.getValue();
+      String pattern = entry.getValue();
 
-        if (pattern.matches(readPattern)) {
-            synchronized (thread) {
-                thread.notify();
-            }
+      if (readPattern.matches(pattern)) {
+        Thread thread = entry.getKey();
+        synchronized (thread) {
+          thread.notify();
         }
+      }
     }
   }
 }

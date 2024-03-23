@@ -124,7 +124,8 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		String tuple;
 
 		debug("--------------------");
-		debug("Received Take request with pattern " + pattern + " and sequence number " + seqNumber);
+		debug("Received Take request with pattern " + pattern + " and sequence number " + seqNumber +
+			", and nextOp is currently " + nextOp);
 
 		if (!isTupleValid(pattern)) {
 			debug("Pattern has the wrong format, sending exception");
