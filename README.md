@@ -81,22 +81,26 @@ The command to exit the virtual environment is ``deactivate``, but do not exit i
 
 ### Server
 
-In another terminal, outside the virtual environment, enter the ``ServerR2\`` folder and run the following commands:
+In another terminal, outside the virtual environment, enter the ``ServerR3\`` folder and run the following command:
 
 ```s
-mvn clean
-
-mvn compile
+mvn clean compile
 ```
 
 ### Client
 
-Finally, in a terminal that is outside the virtual environment, enter the ``Client\`` folder and run the same commands:
+Also outside the virtual environment, enter the ``Client\`` folder and run the same command:
 
 ```s
-mvn clean
+mvn clean compile
+```
 
-mvn compile
+### Sequencer
+
+Finally, outside the virtual environment, enter the ``Sequencer\`` folder and run the same command:
+
+```s
+mvn clean compile
 ```
 
 ## Running Instructions
@@ -113,9 +117,17 @@ For additional debug information, append ``-debug`` to the end of the command.
 
 You do not need to use the virtual environment for any further steps.
 
+### Sequencer
+
+This implementation uses a Sequencer to establish total order between the three servers. To run the sequencer, go into the ``Sequencer\`` folder and run the following command:
+
+```s
+mvn exec:java
+``` 
+
 ### TupleSpace Servers
 
-Afterwards, run 3 different TupleSpace servers by going into the ``ServerR2\`` folder and running the following command:
+Afterwards, run 3 different TupleSpace servers by going into the ``ServerR3\`` folder and running the following command:
 
 ```s
 mvn exec:java -D exec.args="<port> <qualifier>"

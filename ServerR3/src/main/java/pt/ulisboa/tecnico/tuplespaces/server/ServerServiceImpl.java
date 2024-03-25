@@ -19,13 +19,10 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 	private boolean debugFlag = false;
 
-	private int nextOp;
-
 	private ServerState serverState = new ServerState();
 
 	public ServerServiceImpl(boolean dFlag) {
 		debugFlag = dFlag;
-		nextOp = 1;
 	}
 
 	/** Helper method to print debug messages. */
@@ -41,7 +38,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 		debug("--------------------");
 		debug("Received Put request with tuple " + tuple + " and sequence number " + seqNumber +
-			", and nextOp is currently " + nextOp);
+			", and nextOp is currently " + serverState.getNextOp());
 
 		if (!isTupleValid(tuple)) {
 			debug("Tuple is not valid, sending exception");
@@ -51,7 +48,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 		synchronized (serverState) {
 			try {
-				while (seqNumber != nextOp) {
+				while (seqNumber != serverState.getNextOp()) {
 					serverState.wait();
 				}
 			} catch (InterruptedException e) {
@@ -60,7 +57,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			
 			serverState.put(tuple);
 			
-			nextOp++;
+			serverState.incrementNextOp();
 			
 			serverState.awakeReadThreads(tuple);
 			serverState.awakeTakeThread(tuple);
@@ -129,7 +126,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 		debug("--------------------");
 		debug("Received Take request with pattern " + pattern + " and sequence number " + seqNumber +
-			", and nextOp is currently " + nextOp);
+			", and nextOp is currently " + serverState.getNextOp());
 
 		if (!isTupleValid(pattern)) {
 			debug("Pattern has the wrong format, sending exception");
@@ -139,7 +136,7 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 
 		synchronized (serverState) {
 			try {
-				while (seqNumber != nextOp) {
+				while (seqNumber != serverState.getNextOp()) {
 					serverState.wait();
 				}
 			} catch (InterruptedException e) {
@@ -147,10 +144,10 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			}
 
 			tuple = serverState.take(pattern);
-		}
 
-		// Increments nextOp regardless of whether the operation was successful
-		nextOp++;
+			// Increments nextOp regardless of whether the operation was successful
+			serverState.incrementNextOp();
+		}
 
 		Thread thread = Thread.currentThread();
 		TakeObj takeObj = new TakeObj(thread, seqNumber);
@@ -158,11 +155,15 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 		if (tuple == null) {
 			debug("There is no tuple that matches the given pattern, " +
 					"putting the client on hold");
+			serverState.addTakeObj(pattern, takeObj);
 		}
+
+		// We only notify threads waiting for their sequence number after the
+		// TakeObj is already safely stored (if the take operation returned null)
+		serverState.notifyAll();
 		
 		synchronized(thread) {
 			while (tuple == null) {
-				serverState.addTakeObj(pattern, takeObj);
 				try {
 					thread.wait();
 					tuple = serverState.take(pattern);

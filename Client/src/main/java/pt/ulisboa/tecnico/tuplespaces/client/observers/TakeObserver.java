@@ -5,13 +5,16 @@ import pt.ulisboa.tecnico.tuplespaces.replicaTotalOrder.contract.TupleSpacesRepl
 
 public class TakeObserver implements StreamObserver<TakeResponse> {
     String response;
+    int nResponses;
 
     public TakeObserver() {
+        nResponses = 0;
     }
 
     @Override
     synchronized public void onNext(TakeResponse r) {
         response = r.getResult(); 
+        nResponses++;
         notifyAll();
     }
 
@@ -23,8 +26,9 @@ public class TakeObserver implements StreamObserver<TakeResponse> {
     synchronized public void onCompleted() {
     }
     
-    synchronized public String waitUntilReceivesResponse() throws InterruptedException {
-        wait();
+    synchronized public String waitUntilAllReceived(int n) throws InterruptedException {
+        while (nResponses < n) 
+            wait();
         return response;
     }
 }

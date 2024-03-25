@@ -216,7 +216,7 @@ public class ClientService {
         stubs[id].take(takeRequest, takeObserver);
       }
 
-      String result = takeObserver.waitUntilReceivesResponse();
+      String result = takeObserver.waitUntilAllReceived(numServers);
 
       if (isTupleValid(result)) {
         System.out.println("OK");

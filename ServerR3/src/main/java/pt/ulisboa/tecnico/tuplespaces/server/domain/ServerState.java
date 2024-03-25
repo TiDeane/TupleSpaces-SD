@@ -6,7 +6,11 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 public class ServerState {
+  private final ReadWriteLock lock;
 
   private List<String> tuples;
 
@@ -18,23 +22,45 @@ public class ServerState {
   private Map<String, PriorityQueue<TakeObj>> takeMap;
   private Map<Thread, String> readMap;
 
+  private int nextOp;
+
   public ServerState() {
     this.tuples = new ArrayList<String>();
     this.takeMap = new HashMap<>();
     this.readMap = new HashMap<>();
+    this.lock = new ReentrantReadWriteLock();
+    nextOp = 1;
+  }
+
+  public int getNextOp() {
+    return nextOp;
+  }
+
+  public synchronized void incrementNextOp() {
+    nextOp++;
   }
 
   public synchronized void put(String tuple) {
-    tuples.add(tuple);
+    lock.writeLock().lock();
+    try {
+      tuples.add(tuple);
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 
   private String getMatchingTuple(String pattern) {
-    for (String tuple : this.tuples) {
-      if (tuple.matches(pattern)) {
-        return tuple;
+    lock.readLock().lock();
+    try {
+      for (String tuple : this.tuples) {
+        if (tuple.matches(pattern)) {
+          return tuple;
+        }
       }
+      return null;
+    } finally {
+      lock.readLock().unlock();
     }
-    return null;
   }
 
   public synchronized String read(String pattern) {
@@ -42,11 +68,16 @@ public class ServerState {
   }
 
   public synchronized String take(String pattern) {
-    String tuple = getMatchingTuple(pattern);
-    if (tuple != null) {
-      this.tuples.remove(tuple);
+    lock.writeLock().lock();
+    try {
+      String tuple = getMatchingTuple(pattern);
+      if (tuple != null) {
+        this.tuples.remove(tuple);
+      }
+      return tuple;
+    } finally {
+      lock.writeLock().unlock();
     }
-    return tuple;
   }
 
   public synchronized List<String> getTupleSpacesState() {
