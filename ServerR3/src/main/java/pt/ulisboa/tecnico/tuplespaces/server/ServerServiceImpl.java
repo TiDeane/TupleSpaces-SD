@@ -158,10 +158,12 @@ public class ServerServiceImpl extends TupleSpacesReplicaImplBase {
 			serverState.addTakeObj(pattern, takeObj);
 		}
 
-		// We only notify threads waiting for their sequence number after the
-		// TakeObj is already safely stored (if the take operation returned null)
-		serverState.notifyAll();
-		
+		synchronized(serverState) {
+			// We only notify threads waiting for their sequence number after the
+			// TakeObj is already safely stored (if the take operation returned null)
+			serverState.notifyAll();
+		}
+
 		synchronized(thread) {
 			while (tuple == null) {
 				try {
