@@ -151,7 +151,7 @@ public class ServerState {
     // Removes the TakeObj from the Queue and notifies the corresponding Thread
     Thread thread = minQueue.poll().getThread();
 
-    if (minQueue.isEmpty() || lastPattern != null) {
+    if (minQueue.isEmpty()) {
       takeMap.remove(lastPattern);
     }
 
