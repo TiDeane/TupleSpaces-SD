@@ -1,17 +1,13 @@
 # TupleSpaces
 
-Distributed Systems Project 2024
+This implementation is based on the **State Machine Replication** (SMR) approach, an alternative to the Xu/Liskov algorithm. This approach focuses on ensuring total order for operations between the three replicas. Like the other implementations, the clients discover the servers' addresses dynamically through the NameServer. The client must also use non-blocking gRPC stubs.
 
-**Group A02**
+In this alternative, when invoking a _put_ or _take_ operation, the client starts by contacting a remote service (_sequencer_) that provides it with a unique sequence number. Then, the client sends the request to the TupleSpace servers, together with the sequence number.
 
-**Difficulty level: I am Death incarnate!**
+The servers process _put_/_take_ requests in total order, thus implementing a replicated state machine.
+It was up to each group to define the algorithm (executed by the servers) that ensures this objective, taking advantage of the sequence numbers sent with each order.
 
-
-### Code Identification
-
-In all source files (namely in the *groupId*s of the POMs), replace __GXX__ with your group identifier. The group
-identifier consists of either A or T followed by the group number - always two digits. This change is important for 
-code dependency management, to ensure your code runs using the correct components and not someone else's.
+Note: The implementation of the remote service that provides the sequence numbers was provided by the faculty.
 
 ### Team Members
 
@@ -27,7 +23,7 @@ The overall system is made up of several modules. The different types of servers
 The clients are in _Client_.
 The definition of messages and services is in _Contract_. The naming server is in _NameServer_.
 
-See the [Project Statement](https://github.com/tecnico-distsys/TupleSpaces) for a complete domain and system description.
+Link to the [original Project Statement](https://github.com/tecnico-distsys/TupleSpaces/blob/master/tuplespaces.md).
 
 ### Prerequisites
 
