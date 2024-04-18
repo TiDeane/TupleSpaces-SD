@@ -1,17 +1,21 @@
 # TupleSpaces
 
-Distributed Systems Project 2024
+The service is replicated in three servers (A, B and C), following an adaptation of the [Xu-Liskov algorithm](http://www.ai.mit.edu/projects/aries/papers/programming/linda.pdf). Like the previous implementation, this variant discovers the servers' addresses dynamically through the NameServer. The client must also use a non-blocking gRPC stub.
 
-**Group A02**
+For _put_ and _read_ operations, the client starts by sending the request to all servers and then waits for responses (from one server, in the case of read, or from all servers, in the case of put).
 
-**Difficulty level: I am Death incarnate!**
+Before explaining the _take_ operation, which is executed in two steps, we must learn about the changes to the TupleSpace made to support this:
 
+Each tuple maintained on the server, in addition to its _string_, has the following additional fields: a _flag_ that indicates whether the tuple is locked by a client (which executed the first step of the _take_ operation but has not yet completed the second step), and an identifier for that client. The client identifier is a unique number that the customer passes along with _take_ requests. (Note: this aspect partially differs from the original article.)
 
-### Code Identification
+The _take_ operation in this implementation works as follows:
 
-In all source files (namely in the *groupId*s of the POMs), replace __GXX__ with your group identifier. The group
-identifier consists of either A or T followed by the group number - always two digits. This change is important for 
-code dependency management, to ensure your code runs using the correct components and not someone else's.
+- **TakePhase1**: The client sends a request to all servers with the tuple he wants to remove (can include regular expressions) along with his _clientId_. Upon receiving this request, the servers "lock" all tuples in the TupleSpace that match the pattern and store the client's ID within each tuple. The servers then reply with a list of all the locked tuples.
+
+- **TakePhase1Release**: This is a partial step; if the intersection of the lists of tuples returned by the 3 servers is empty, the client aborts the _take_ operation by sending a requests containing his _clientId_. The servers then unlock all the tuples locked by the client (using his _clientId_).
+
+- **TakePhase2**: If TakePhase1 was successful, the client sends a request to all servers with his desired tuple and his _clientId_. The servers then remove that tuple from the TupleSpace and unlock all tuples locked by the client (using his _clientId_).
+
 
 ### Team Members
 
@@ -27,7 +31,7 @@ The overall system is made up of several modules. The different types of servers
 The clients are in _Client_.
 The definition of messages and services is in _Contract_. The naming server is in _NameServer_.
 
-See the [Project Statement](https://github.com/tecnico-distsys/TupleSpaces) for a complete domain and system description.
+Link to the [original Project Statement](https://github.com/tecnico-distsys/TupleSpaces/blob/master/tuplespaces.md).
 
 ### Prerequisites
 
