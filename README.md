@@ -1,17 +1,10 @@
 # TupleSpaces
 
-Distributed Systems Project 2024
+### R1
 
-**Group A02**
+The service is provided by a single server (i.e. a simple client-server architecture, without server replication), which accepts requests at a fixed address/port. Clients must use gRPC blocking stubs.
 
-**Difficulty level: I am Death incarnate!**
-
-
-### Code Identification
-
-In all source files (namely in the *groupId*s of the POMs), replace __GXX__ with your group identifier. The group
-identifier consists of either A or T followed by the group number - always two digits. This change is important for 
-code dependency management, to ensure your code runs using the correct components and not someone else's.
+Clients do not know, when they are launched, what the server address is. For this reason, they first contact a NameServer (with a known IP and port) to dynamically obtain the TupleSpace server's address.
 
 ### Team Members
 
@@ -28,7 +21,7 @@ The clients is in _Client_.
 The definition of messages and services is in _Contract_. The naming server
 is in _NameServer_.
 
-See the [Project Statement](https://github.com/tecnico-distsys/TupleSpaces) for a complete domain and system description.
+Link to the [original Project Statement](https://github.com/tecnico-distsys/TupleSpaces/blob/master/tuplespaces.md).
 
 ### Prerequisites
 
