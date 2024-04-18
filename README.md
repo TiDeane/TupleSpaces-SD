@@ -1,17 +1,43 @@
 # TupleSpaces
 
-Distributed Systems Project 2024
+The goal of this project was to develop the **TupleSpace** system, a service that implements a distributed _tuple space_ using gRPC and Java (along with a Python NameServer). There are **three different implementations**, each in their respective branches, explained further below.
 
-**Group A02**
+## What is a TupleSpace?
 
-**Difficulty level: I am Death incarnate!**
+The service allows one or more users (also called _workers_ in the literature) to place tuples in the shared space, read existing tuples, as well as remove tuples from the space. A tuple is an ordered set of fields _<field_1, field_2, ..., field_n>_.
+In this project, a tuple must be instantiated as a _string_, for example, `"<vacancy,sd,shift1>"`.
 
+In the TupleSpace, several identical instances can co-exist.
+For example, there may be multiple tuples `"<vacancy,sd,turno1>"`, indicating the existence of several vacancies.
 
-### Code Identification
+It is possible to search, in the space of tuples, for a given tuple to read or remove.
+In the simplest variant, one can search for a concrete tuple. For example, `"<vacancy,sd,shift1>"`.
+Alternatively, you can use [Java regular expressions](https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html#sum) to allow pairing with multiple values. For example, `"<vacancy,sd,[^,]+>"` pairs with `"<vacancy,sd,turno1>"` as well as `"<vacancy,sd,turno2>"`.
 
-In all source files (namely in the *groupId*s of the POMs), replace __GXX__ with your group identifier. The group
-identifier consists of either A or T followed by the group number - always two digits. This change is important for 
-code dependency management, to ensure your code runs using the correct components and not someone else's.
+The operations available to the user are the following [^1]: _put_, _read_, _take_ and _getTupleSpacesState_.
+
+* The *put* operation adds a tuple to the shared space.
+
+* The *read* operation accepts the tuple description (possibly with regular expression) and returns *a* tuple that matches the description, if one exists. This operation blocks the client until a tuple that satisfies the description exists. The tuple is *not* removed from the tuple space.
+
+* The *take* operation accepts the tuple description (possibly with regular expression) and returns *a* tuple that matches the description. This operation blocks the client until a tuple that satisfies the description exists. The tuple *is* removed from the tuple space.
+
+* The *getTupleSpacesState* operation receives as its only argument the qualifier of the server to be queried and returns all tuples present on that server.
+
+Users access the **TupleSpace** service through a client process, which interacts
+with one or more servers that offer the service, through calls to remote procedures.
+
+## Implementations:
+
+* **R1** (on branch R1): The service is provided by a single server (i.e. a simple client-server architecture, without server replication), which accepts requests at a fixed address/port.
+
+* **R2** (on branch R2): The service is replicated in three servers (A, B and C), following an adaptation of the [Xu-Liskov algorithm](http://www.ai.mit.edu/projects/aries/papers/programming/linda.pdf). This algorithm performs the _take_ operation in two steps to ensure consistency (explained in more detail in the R2 branch).
+
+* **R3** (on branch R3): This implementation is based on the **State Machine Replication** (SMR) approach, an alternative to the Xu/Liskov algorithm. This approach focuses on ensuring total order for operations between the three replicas.
+
+Note that both Variant 2 and Variant 3 have advantages and disadvantages, and may present better or worse performance depending on the pattern of use of the tuple space.
+
+---------
 
 ### Team Members
 
@@ -27,7 +53,7 @@ The overall system is made up of several modules. The different types of servers
 The clients are in _Client_.
 The definition of messages and services is in _Contract_. The naming server is in _NameServer_.
 
-See the [Project Statement](https://github.com/tecnico-distsys/TupleSpaces) for a complete domain and system description.
+Link to the [original Project Statement](https://github.com/tecnico-distsys/TupleSpaces/blob/master/tuplespaces.md).
 
 ### Prerequisites
 
@@ -42,6 +68,10 @@ mvn -version
 ```
 
 ## Installation
+
+Installation information for each implementation can be found in their respective branches.
+
+Below follows the installation process for branch R3, which is the installation currently present in the master branch.
 
 ### Contract
 
