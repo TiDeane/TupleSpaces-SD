@@ -1,6 +1,6 @@
 # TupleSpaces
 
-The service is replicated in three servers (A, B and C), following an adaptation of the [Xu-Liskov algorithm](http://www.ai.mit.edu/projects/aries/papers/programming/linda.pdf). Like the previous implementation, this variant discovers the servers' addresses dynamically through the NameServer. The client must also use a non-blocking gRPC stub.
+The service is replicated in three servers (A, B and C), following an adaptation of the [Xu-Liskov algorithm](http://www.ai.mit.edu/projects/aries/papers/programming/linda.pdf). Like the previous implementation, this variant discovers the servers' addresses dynamically through the NameServer. The client must also use non-blocking gRPC stubs.
 
 For _put_ and _read_ operations, the client starts by sending the request to all servers and then waits for responses (from one server, in the case of read, or from all servers, in the case of put).
 
